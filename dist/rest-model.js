@@ -1538,11 +1538,14 @@ module.exports = Ember.Object.extend({
       type: 'GET'
     }, options);
 
-    return this.request(options)
-      .then(this.create.bind(this)).then(function(model) {
-        model.setProperties(parents);
-        return model;
-      });
+    var self = this;
+    return this.request(options).then(function(item) {
+      if (item instanceof self) {
+        return self.extend(item).create().setProperties(parents);
+      } else {
+        return self.create(item).setProperties(parents);
+      }
+    });
   },
 
   /**
@@ -1600,14 +1603,22 @@ module.exports = Ember.Object.extend({
 
     if (Ember.isArray(response)) {
       var content = response.map(function(item) {
-        return this.create(item).setProperties(parents);
+        if (item instanceof this) {
+          return this.extend(item).create().setProperties(parents);
+        } else {
+          return this.create(item).setProperties(parents);
+        }
       }.bind(this));
 
       return MutatingArray.apply(content)
         .set('filters', Ember.copy(this.filters))
         .runFilters();
     } else {
-      return this.create(response).setProperties(parents);
+      if (response instanceof this) {
+        return this.extend(response).create().setProperties(parents);
+      } else {
+        return this.create(response).setProperties(parents);
+      }
     }
   },
 
