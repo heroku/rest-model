@@ -25,7 +25,7 @@
     "test"
   ],
   "dependencies": {
-    "ember": ">= 1.5.0 < 1.11"
+    "ember": ">= 1.5.0 < 1.12"
   },
   "devDependencies": {
     "handlebars": "~2.0.0"

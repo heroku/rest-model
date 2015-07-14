@@ -14,6 +14,7 @@ var utils         = require('./lib/utils');
  * @param {Object} attributes the attributes to initialize the instance with
  */
 module.exports = Ember.Object.extend({
+  isRestModelClass: true,
   /**
    * Initialize a new instance of this class. Does so by first setting the
    * initial properties to the `originalProperties` value and by defining the
@@ -957,5 +958,34 @@ module.exports = Ember.Object.extend({
     });
 
     return model.getProperties(keys);
+  },
+
+  /**
+   * Bug in RestModel calls `create` with an instance in `toResult`, which will
+   * set computed properties. This is not allowed in Ember 1.11.
+   * To get around this, iterate through the object and pull out any computed
+   * properties, passing those to .extend() before calling create()
+   *
+   * @method create
+   */
+
+  create: function (attrs) {
+    attrs = attrs || {};
+
+    if (attrs.isRestModelClass) {
+      var prop = {};
+      var cp = {};
+
+      Ember.keys(attrs).forEach(function (key) {
+        var val = attrs[key];
+        if (val instanceof Ember.ComputedProperty) {
+          cp[key] = val;
+        } else {
+          prop[key] = val;
+        }
+      });
+      return this.extend(cp)._super.call(this, prop);
+    }
+    return this._super.call(this, attrs);
   }
 });
