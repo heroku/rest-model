@@ -9,16 +9,10 @@ meet custom needs.
 
 **DISCLAIMER: Consider [ember-data](https://github.com/emberjs/data) instead.**
 
-
-## Documentation
-
-This readme, and more detailed work-in-progress
-[here, on GitHub pages](http://dingus.io/rest-model/).
-
 ## Install
 
 ```bash
-bower install rest-model --save
+bower install heroku/rest-model --save
 ```
 
 ## Use
