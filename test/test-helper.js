@@ -59,12 +59,12 @@ beforeEach(function() {
     then: function(resolve, reject) {
       if (self.resolve) {
         setTimeout(function() {
-          resolve(self.resolve);
+          resolve(self.resolve, 'success', { status: 200 });
           self.afterRequest();
         }, 5);
       } else if (self.reject) {
         setTimeout(function() {
-          reject(self.reject);
+          reject(self.reject, 'notfound', { status: 404 });
           self.afterRequest();
         }, 5);
       } else {

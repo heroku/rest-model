@@ -215,6 +215,7 @@ describe('RestModel.V2', function() {
       var args;
 
       beforeEach(function() {
+        this.resolve = {};
         post.set('id', 1);
         post.delete();
         args = jQuery.ajax.lastCall.args;
@@ -292,7 +293,7 @@ describe('RestModel.V2', function() {
         setTimeout(function() {
           post.get('email').should.eql('new-email@example.com');
           done();
-        }, 10);
+        }, 20);
       }.bind(this));
     });
 
@@ -499,24 +500,28 @@ describe('RestModel.V2', function() {
 
   describe('::ajax', function() {
     it('defaults to GET', function() {
+      this.resolve = {};
       return Post.ajax().then(function() {
         jQuery.ajax.lastCall.args[0].type.should.eql('GET');
       });
     });
 
     it('defaults to json dataType', function() {
+      this.resolve = {};
       return Post.ajax().then(function() {
         jQuery.ajax.lastCall.args[0].dataType.should.eql('json');
       });
     });
 
     it('defaults to application/json contentType', function() {
+      this.resolve = {};
       return Post.ajax().then(function() {
         jQuery.ajax.lastCall.args[0].contentType.should.eql('application/json');
       });
     });
 
     it('accepts custom options', function() {
+      this.resolve = {};
       return Post.ajax({ type: 'POST' }).then(function() {
         jQuery.ajax.lastCall.args[0].type.should.eql('POST');
       });
@@ -525,8 +530,8 @@ describe('RestModel.V2', function() {
     it('returns a promise that resolves with the response data', function() {
       this.resolve = { foo: 'bar' };
 
-      return Post.ajax().then(function(data) {
-        data.should.eql({ foo: 'bar' });
+      return Post.ajax().then(function(response) {
+        response.data.should.eql({ foo: 'bar' });
       });
     });
 
@@ -553,16 +558,16 @@ describe('RestModel.V2', function() {
       it('deserializes objects', function() {
         this.resolve = { foo: 'bar' };
 
-        return Model.ajax().then(function(data) {
-          data.should.eql({ foo: 'transformed' });
+        return Model.ajax().then(function(response) {
+          response.data.should.eql({ foo: 'transformed' });
         });
       });
 
       it('deserializes arrays', function() {
         this.resolve = [{ foo: 'bar' }];
 
-        return Model.ajax().then(function(data) {
-          data.toArray().should.eql([{ foo: 'transformed' }]);
+        return Model.ajax().then(function(response) {
+          response.data.toArray().should.eql([{ foo: 'transformed' }]);
         });
       });
     });
@@ -639,7 +644,7 @@ describe('RestModel.V2', function() {
               setTimeout(function() {
                 comments.mapBy('parents.post').should.eql([1, 1]);
                 done();
-              }, 10);
+              }, 20);
             });
           });
         });
@@ -725,10 +730,14 @@ describe('RestModel.V2', function() {
 
   describe('::request', function() {
     context('when it is not a GET request', function() {
-      var ajaxSpy, cacheSpy;
+      var ajaxStub, cacheSpy;
 
       beforeEach(function() {
-        ajaxSpy  = sinon.spy(RestModel, 'ajax');
+        ajaxStub = sinon.stub(RestModel, 'ajax').returns({
+          then: function(resolve) {
+            resolve({data: null, status: 200});
+          }
+        });
         cacheSpy = sinon.spy(RestModel, 'requestWithCache');
 
         return RestModel.request({
@@ -737,7 +746,7 @@ describe('RestModel.V2', function() {
       });
 
       afterEach(function() {
-        ajaxSpy.restore();
+        ajaxStub.restore();
         cacheSpy.restore();
       });
 
@@ -746,7 +755,7 @@ describe('RestModel.V2', function() {
       });
 
       it('performs an AJAX request with the options', function() {
-        ajaxSpy.lastCall.args[0].should.eql({ type: 'POST' });
+        ajaxStub.lastCall.args[0].should.eql({ type: 'POST' });
       });
     });
 
@@ -821,7 +830,7 @@ describe('RestModel.V2', function() {
               url : '/posts'
             }).then(function(result) {
               result.mapBy('name').should.eql(['name-1', 'name-2']);
-              setTimeout(done, 10);
+              setTimeout(done, 20);
             });
           });
 
@@ -833,7 +842,7 @@ describe('RestModel.V2', function() {
               setTimeout(function() {
                 result.mapBy('name').should.eql(['new-name-1', 'name-3']);
                 done();
-              }, 10);
+              }, 20);
             });
           });
 
@@ -845,7 +854,7 @@ describe('RestModel.V2', function() {
               setTimeout(function() {
                 result.mapBy('constructor.typeKey').should.eql(['post', 'post']);
                 done();
-              }, 10);
+              }, 20);
             });
           });
         });
@@ -871,7 +880,7 @@ describe('RestModel.V2', function() {
               url : '/posts/1'
             }).then(function(result) {
               result.get('name').should.eql(originalResponse.name);
-              setTimeout(done, 10);
+              setTimeout(done, 20);
             });
           });
 
@@ -883,7 +892,7 @@ describe('RestModel.V2', function() {
               setTimeout(function() {
                 result.get('name').should.eql('new-name');
                 done();
-              }, 10);
+              }, 20);
             });
           });
         });
