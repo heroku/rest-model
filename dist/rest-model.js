@@ -406,13 +406,22 @@ var RestModel = module.exports = Ember.Object.extend({
    */
   ajax: function(options) {
     var self     = this;
-    var method   = options.method || 'GET';
+    var method   = options.method || options.type || 'GET';
     var cacheKey = this.getCacheKey(options);
     var cachedValue;
 
     if (!options.hasOwnProperty('cache')) {
       options.cache = this.cache;
     }
+
+    var ajaxOptions = {
+      type       : method,
+      dataType   : 'json',
+      contentType: 'application/json',
+      beforeSend : self.getBeforeSend(options)
+    };
+
+    $.extend(ajaxOptions, options);
 
     return new Ember.RSVP.Promise(function(resolve, reject) {
       var processedCache;
@@ -422,15 +431,13 @@ var RestModel = module.exports = Ember.Object.extend({
         resolve(processedCache);
       }
 
-      $.ajax({
-        url        : options.url,
-        type       : method,
-        data       : options.data,
-        headers    : options.headers || {},
-        beforeSend : self.getBeforeSend(options),
-        dataType   : 'json',
-        contentType: 'application/json'
-      }).then(function(data, responseText, jqXHR) {
+      $.ajax(ajaxOptions).then(function(data, _text, jqXHR) {
+
+        if (processedCache && jqXHR.status === 304) {
+          // Cache is valid, do nothing.
+          return processedCache;
+        }
+
         var processedResponse = self.processResponse(data, options);
 
         if (options.cache && method === 'GET' && data) {
@@ -608,10 +615,11 @@ var RestModel = module.exports = Ember.Object.extend({
       primaryKey = parents;
       parents    = undefined;
     }
-
     var params = this.extractPrimaryKeys(parents);
     var url    = this.buildURL(params, primaryKey, opts);
-    return this.ajax({ url: url, parents: parents });
+    opts = opts || {};
+    $.extend(opts, { url: url, parents: parents });
+    return this.ajax(opts);
   },
 
   /**
@@ -696,7 +704,8 @@ var RestModel = module.exports = Ember.Object.extend({
     var url    = this.buildURL(params, model.getPrimaryKey(), options);
     var data   = model.serialize('patch');
     options = options || {};
-    return this.ajax({ url: url, method: 'PATCH', data: data, rawResponse: true, headers: options.headers });
+    $.extend(options,{ url: url, method: 'PATCH', data: data, rawResponse: true});
+    return this.ajax(options);
   },
 
   /**
@@ -719,7 +728,8 @@ var RestModel = module.exports = Ember.Object.extend({
     var url    = this.buildURL(params, null, options);
     var data   = model.serialize('post');
     options = options || {};
-    return this.ajax({ url: url, method: 'POST', data: data, rawResponse: true, headers: options.headers });
+    $.extend(options, { url: url, method: 'POST', data: data, rawResponse: true });
+    return this.ajax(options);
   },
 
   /**
@@ -742,7 +752,8 @@ var RestModel = module.exports = Ember.Object.extend({
     var url    = this.buildURL(params, null, options);
     var data   = model.serialize('put');
     options = options || {};
-    return this.ajax({ url: url, method: 'PUT', data: data, rawResponse: true, headers: options.headers });
+    $.extend(options, { url: url, method: 'PUT', data: data, rawResponse: true });
+    return this.ajax(options);
   },
 
   /**
@@ -1139,8 +1150,8 @@ module.exports = Ember.Object.extend({
         data: this.serialize()
       }, options);
 
-      return this.constructor.ajax(options).then(function(data) {
-        return this.persistToCache(data);
+      return this.constructor.ajax(options).then(function(response) {
+        return this.persistToCache(response.data);
       }.bind(this)).then(function(data) {
         this.setProperties(data);
         this.setOriginalProperties();
@@ -1359,14 +1370,14 @@ module.exports = Ember.Object.extend({
     utils.extend(ajaxOptions, options);
 
     return new Ember.RSVP.Promise(function(resolve, reject) {
-      Ember.$.ajax(ajaxOptions).then(function(data) {
+      Ember.$.ajax(ajaxOptions).then(function(data, _text, jqXHR) {
         if (Ember.isArray(data)) {
           data = this.deserializeArray(data);
         } else {
           data = this.deserialize(data);
         }
 
-        resolve(data);
+        resolve({ data: data, status: jqXHR.status });
       }.bind(this), function(jqXHR) {
         delete jqXHR.then;
         reject(jqXHR);
@@ -1638,7 +1649,7 @@ module.exports = Ember.Object.extend({
    * ```
    */
   request: function(options, processingOptions, updateModel) {
-    var readFromCache = this.cache && options.type.toLowerCase() === 'get';
+    var readFromCache = (this.cache || options.cache) && options.type.toLowerCase() === 'get';
 
     processingOptions = utils.extend({
       toResult   : this.toResult.bind(this)
@@ -1649,7 +1660,7 @@ module.exports = Ember.Object.extend({
     } else {
       return this.ajax(options).then(function(response) {
         var parents = processingOptions.parents;
-        return processingOptions.toResult(response, parents);
+        return processingOptions.toResult(response.data, parents);
       });
     }
   },
@@ -1713,11 +1724,14 @@ module.exports = Ember.Object.extend({
     var parents = processingOptions.parents;
 
     return this.ajax(options).then(function(response) {
-      return cache.setResponse(this, options.url, response);
-    }.bind(this)).then(function(response) {
-      response = processingOptions.toResult(response, parents);
-
-      if (result) {
+      if (response.status === 304) {
+        return response.data;
+      } else {
+        return cache.setResponse(this, options.url, response.data);
+      }
+    }.bind(this)).then(function(data) {
+      var response = processingOptions.toResult(data, parents);
+      if (result && result !== data) {
         if (Ember.isArray(response)) {
           return this.updateCachedArray(result, response);
         } else {
