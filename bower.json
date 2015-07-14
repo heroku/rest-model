@@ -1,9 +1,15 @@
 {
   "name": "rest-model",
   "main": "dist/rest-model.js",
-  "version": "1.8.4",
+  "version": "2.0.0",
   "authors": [
-    "Jonathan Clem <jonathan@jclem.net>"
+    "Jonathan Clem <jonathan@jclem.net>",
+    "Josh Lewis <josh.w.lewis@gmail.com>",
+    "Jack Anderson <hi@janderson.me>",
+    "Raul Barroso <ra.barroso@gmail.com>",
+    "Andy Appleton <andysapple@gmail.com>",
+    "Nando Vieira <fnando.vieira@gmail.com>",
+    "HIT <hit@heroku.com>"
   ],
   "description": "simple library for using REST APIs in ember",
   "keywords": [

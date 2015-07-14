@@ -6,6 +6,10 @@ RestModel is a library for interacting with a REST API in Ember. Its goal is to
 provide a library with predictable behavior and which can be easily extended to
 meet custom needs.
 
+
+**DISCLAIMER: Consider [ember-data](https://github.com/emberjs/data) instead.**
+
+
 ## Documentation
 
 This readme, and more detailed work-in-progress
