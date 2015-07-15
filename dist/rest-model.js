@@ -1372,6 +1372,7 @@ module.exports = Ember.Object.extend({
 
     return new Ember.RSVP.Promise(function(resolve, reject) {
       Ember.$.ajax(ajaxOptions).then(function(data, _text, jqXHR) {
+        jqXHR = jqXHR || {};
         if (Ember.isArray(data)) {
           data = this.deserializeArray(data);
         } else {
