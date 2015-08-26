@@ -387,9 +387,9 @@ module.exports = Ember.Object.extend({
    * @private
    */
   _definePrimaryKey: function() {
-    var args = this.constructor.primaryKeys.concat(function(_, setValue) {
-      var keyNames = this.constructor.primaryKeys;
-      if (setValue === undefined) {
+    var keyNames = this.constructor.primaryKeys;
+    var args = this.constructor.primaryKeys.concat({
+      get: function() {
         var key, value;
         for (var i = 0; i < keyNames.length; i++) {
           key   = keyNames[i];
@@ -399,7 +399,8 @@ module.exports = Ember.Object.extend({
             return value;
           }
         }
-      } else {
+      },
+      set: function(key, setValue) {
         if (this.get('primaryKey') !== setValue) {
           this.set(keyNames[0], setValue);
         }
@@ -409,7 +410,6 @@ module.exports = Ember.Object.extend({
     var primaryKey = Ember.computed.apply(Ember, args);
     Ember.defineProperty(this, 'primaryKey', primaryKey);
   },
-
   /*
    * Defines the property 'dirtyProperties'. Used during initialization.
    *
