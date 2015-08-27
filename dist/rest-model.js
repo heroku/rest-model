@@ -103,27 +103,29 @@ var RestModel = module.exports = Ember.Object.extend({
      * @property isDirty
      * @type Boolean
      */
-    var isDirty = Ember.computed.apply(Ember, this.get('observableAttrs').concat(function(key, value) {
-      var attrs              = self.get('attrs');
-      var originalProperties = self.get('originalProperties');
-      var i;
+    var isDirty = Ember.computed.apply(Ember, this.get('observableAttrs').concat({
+      get: function() {
+        var attrs              = this.get('attrs');
+        var originalProperties = this.get('originalProperties');
+        var i;
 
-      for (i = 0; i < attrs.length; i++) {
-        key   = attrs[i];
-        value = self.get(key);
+        for (i = 0; i < attrs.length; i++) {
+          var key   = attrs[i];
+          var value = this.get(key);
 
-        var originalValue = originalProperties.get(key);
+          var originalValue = originalProperties.get(key);
 
-        if (Ember.isArray(value) && Ember.isArray(originalValue)) {
-          if (!this.arraysAreEqual(value, originalValue)) {
+          if (Ember.isArray(value) && Ember.isArray(originalValue)) {
+            if (!this.arraysAreEqual(value, originalValue)) {
+              return true;
+            }
+          } else if (!Ember.isEqual(value, originalValue)) {
             return true;
           }
-        } else if (!Ember.isEqual(value, originalValue)) {
-          return true;
         }
-      }
 
-      return false;
+        return false;
+      }
     }));
 
     Ember.defineProperty(this, 'isDirty', isDirty);
@@ -1243,9 +1245,9 @@ module.exports = Ember.Object.extend({
    * @private
    */
   _definePrimaryKey: function() {
-    var args = this.constructor.primaryKeys.concat(function(_, setValue) {
-      var keyNames = this.constructor.primaryKeys;
-      if (setValue === undefined) {
+    var keyNames = this.constructor.primaryKeys;
+    var args = this.constructor.primaryKeys.concat({
+      get: function() {
         var key, value;
         for (var i = 0; i < keyNames.length; i++) {
           key   = keyNames[i];
@@ -1255,7 +1257,8 @@ module.exports = Ember.Object.extend({
             return value;
           }
         }
-      } else {
+      },
+      set: function(key, _, setValue) {
         if (this.get('primaryKey') !== setValue) {
           this.set(keyNames[0], setValue);
         }
@@ -1265,7 +1268,6 @@ module.exports = Ember.Object.extend({
     var primaryKey = Ember.computed.apply(Ember, args);
     Ember.defineProperty(this, 'primaryKey', primaryKey);
   },
-
   /*
    * Defines the property 'dirtyProperties'. Used during initialization.
    *
