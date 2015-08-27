@@ -102,27 +102,29 @@ var RestModel = module.exports = Ember.Object.extend({
      * @property isDirty
      * @type Boolean
      */
-    var isDirty = Ember.computed.apply(Ember, this.get('observableAttrs').concat(function(key, value) {
-      var attrs              = self.get('attrs');
-      var originalProperties = self.get('originalProperties');
-      var i;
+    var isDirty = Ember.computed.apply(Ember, this.get('observableAttrs').concat({
+      get: function() {
+        var attrs              = this.get('attrs');
+        var originalProperties = this.get('originalProperties');
+        var i;
 
-      for (i = 0; i < attrs.length; i++) {
-        key   = attrs[i];
-        value = self.get(key);
+        for (i = 0; i < attrs.length; i++) {
+          var key   = attrs[i];
+          var value = this.get(key);
 
-        var originalValue = originalProperties.get(key);
+          var originalValue = originalProperties.get(key);
 
-        if (Ember.isArray(value) && Ember.isArray(originalValue)) {
-          if (!this.arraysAreEqual(value, originalValue)) {
+          if (Ember.isArray(value) && Ember.isArray(originalValue)) {
+            if (!this.arraysAreEqual(value, originalValue)) {
+              return true;
+            }
+          } else if (!Ember.isEqual(value, originalValue)) {
             return true;
           }
-        } else if (!Ember.isEqual(value, originalValue)) {
-          return true;
         }
-      }
 
-      return false;
+        return false;
+      }
     }));
 
     Ember.defineProperty(this, 'isDirty', isDirty);

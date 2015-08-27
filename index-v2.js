@@ -400,7 +400,7 @@ module.exports = Ember.Object.extend({
           }
         }
       },
-      set: function(key, setValue) {
+      set: function(key, _, setValue) {
         if (this.get('primaryKey') !== setValue) {
           this.set(keyNames[0], setValue);
         }
