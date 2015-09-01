@@ -153,7 +153,7 @@ module.exports = Ember.Object.extend({
     var parents    = this.get('parents');
 
     return this.constructor.buildPath(parents, primaryKey);
-  }.property('primaryKey', 'parents'),
+  }.property('isPersisted', 'primaryKey', 'parents'),
 
 
   /**
