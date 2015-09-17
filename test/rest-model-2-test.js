@@ -335,8 +335,9 @@ describe('RestModel.V2', function() {
       });
 
       it('updates the record attributes with the response', function() {
-        this.resolve = { name: 'Test Post' };
+        this.resolve = { id: 4, name: 'Test Post' };
         return post.fetch().then(function() {
+          post.get('id').should.eql(4);
           post.get('name').should.eql('Test Post');
         });
       });
