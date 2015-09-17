@@ -1813,7 +1813,7 @@ module.exports = Ember.Object.extend({
    */
   getUpdatableProperties: function(model) {
     var keys = Ember.keys(model).filter(function(key) {
-      return ['originalProperties', 'dirtyProperties'].indexOf(key) === -1;
+      return ['primaryKey', 'originalProperties', 'dirtyProperties'].indexOf(key) === -1;
     });
 
     return model.getProperties(keys);
