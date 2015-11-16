@@ -536,6 +536,15 @@ describe('RestModel.V2', function() {
       });
     });
 
+    it('returns a promise that resolves with the jqXHR object', function() {
+      var self = this;
+      this.resolve = { foo: 'bar' };
+
+      return Post.ajax().then(function(response) {
+        response.jqXHR.should.eql(self.jqXHR);
+      });
+    });
+
     it('returns a promise that depromisifies its reject value', function() {
       this.reject = { then: 'looks-like-a-promise' };
 

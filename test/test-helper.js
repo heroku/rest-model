@@ -53,18 +53,21 @@ beforeEach(function() {
 
   this.resolve = null;
   this.reject  = null;
+  this.jqXHR   = {};
   this.afterRequest = function() {};
 
   jQuery.ajax = sinon.stub().returns({
     then: function(resolve, reject) {
       if (self.resolve) {
         setTimeout(function() {
-          resolve(self.resolve, 'success', { status: 200 });
+          self.jqXHR.status = 200;
+          resolve(self.resolve, 'success', self.jqXHR);
           self.afterRequest();
         }, 5);
       } else if (self.reject) {
         setTimeout(function() {
-          reject(self.reject, 'notfound', { status: 404 });
+          self.jqXHR.status = 404;
+          reject(self.reject, 'notfound', self.jqXHR);
           self.afterRequest();
         }, 5);
       } else {

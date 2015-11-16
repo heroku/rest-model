@@ -523,7 +523,7 @@ module.exports = Ember.Object.extend({
           data = this.deserialize(data);
         }
 
-        resolve({ data: data, status: jqXHR.status });
+        resolve({ data: data, status: jqXHR.status, jqXHR: jqXHR });
       }.bind(this), function(jqXHR) {
         delete jqXHR.then;
         reject(jqXHR);
