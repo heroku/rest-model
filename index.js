@@ -322,7 +322,7 @@ var RestModel = module.exports = Ember.Object.extend({
     var self  = this;
     var attrs = this.get('attrs');
 
-    this.set('originalProperties', Ember.keys(this).reduce(function(obj, key) {
+    this.set('originalProperties', Object.keys(this).reduce(function(obj, key) {
       if (attrs.indexOf(key) === -1) {
         return obj;
       } else {

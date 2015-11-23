@@ -954,7 +954,7 @@ module.exports = Ember.Object.extend({
    * @return {Array} an array of property names
    */
   getUpdatableProperties: function(model) {
-    var keys = Ember.keys(model).filter(function(key) {
+    var keys = Object.keys(model).filter(function(key) {
       return ['primaryKey', 'originalProperties', 'dirtyProperties'].indexOf(key) === -1;
     });
 
@@ -977,7 +977,7 @@ module.exports = Ember.Object.extend({
       var prop = {};
       var cp = {};
 
-      Ember.keys(attrs).forEach(function (key) {
+      Object.keys(attrs).forEach(function (key) {
         var val = attrs[key];
         if (val instanceof Ember.ComputedProperty) {
           cp[key] = val;
