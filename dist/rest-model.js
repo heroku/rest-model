@@ -323,7 +323,7 @@ var RestModel = module.exports = Ember.Object.extend({
     var self  = this;
     var attrs = this.get('attrs');
 
-    this.set('originalProperties', Ember.keys(this).reduce(function(obj, key) {
+    this.set('originalProperties', Object.keys(this).reduce(function(obj, key) {
       if (attrs.indexOf(key) === -1) {
         return obj;
       } else {
@@ -1812,7 +1812,7 @@ module.exports = Ember.Object.extend({
    * @return {Array} an array of property names
    */
   getUpdatableProperties: function(model) {
-    var keys = Ember.keys(model).filter(function(key) {
+    var keys = Object.keys(model).filter(function(key) {
       return ['primaryKey', 'originalProperties', 'dirtyProperties'].indexOf(key) === -1;
     });
 
@@ -1835,7 +1835,7 @@ module.exports = Ember.Object.extend({
       var prop = {};
       var cp = {};
 
-      Ember.keys(attrs).forEach(function (key) {
+      Object.keys(attrs).forEach(function (key) {
         var val = attrs[key];
         if (val instanceof Ember.ComputedProperty) {
           cp[key] = val;
@@ -2369,8 +2369,8 @@ exports.arraysEqual = function(array1, array2) {
 exports.objectsEqual = function(object1, object2) {
   if (!(object1 && object2)) { return false; }
 
-  var object1Keys = Ember.keys(object1);
-  var object2Keys = Ember.keys(object2);
+  var object1Keys = Object.keys(object1);
+  var object2Keys = Object.keys(object2);
 
   var haveSameKeys = this.arraysEqual(object1Keys, object2Keys);
 
