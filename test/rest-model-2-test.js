@@ -15,7 +15,7 @@ describe('RestModel.V2', function() {
   var Comment, Post, RestModel, cache, post;
 
   before(function() {
-    RestModel = require('../index').V2;
+    RestModel = require('../index-v2');
     cache     = require('../lib/cache-v2').create();
 
     Post = RestModel.extend({

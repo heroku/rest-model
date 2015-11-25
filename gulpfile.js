@@ -8,7 +8,7 @@ var uglifyjs   = require('gulp-uglifyjs');
 var watch      = require('gulp-watch');
 
 gulp.task('default', function() {
-  gulp.src('index.js')
+  gulp.src('index-v2.js')
     .pipe(browserify({ standalone: 'RestModel' }))
     .pipe(rename('rest-model.js'))
     .pipe(gulp.dest('dist'))
@@ -20,7 +20,6 @@ gulp.task('default', function() {
 gulp.task('watch', function() {
   watch({ glob: [
     'lib/**/*.js',
-    'index.js',
     'index-v2.js',
     'test/**/*.js'
   ] }, function() {
