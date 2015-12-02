@@ -11,8 +11,8 @@ describe('CacheV2', function() {
   var Post, cache;
 
   beforeEach(function() {
-    var RestModel = require('../index-v2');
-    cache = require('../lib/cache-v2').create();
+    var RestModel = require('../index');
+    cache = require('../lib/cache').create();
 
     Post = RestModel.extend().reopenClass({
       typeKey: 'post',

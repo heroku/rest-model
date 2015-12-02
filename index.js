@@ -1,7 +1,7 @@
 'use strict';
 
 var MutatingArray = require('./lib/mutating-array');
-var cache         = require('./lib/cache-v2').create();
+var cache         = require('./lib/cache').create();
 var utils         = require('./lib/utils');
 
 /**

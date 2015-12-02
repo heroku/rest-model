@@ -2,7 +2,7 @@
 'use strict';
 
 var MutatingArray = _dereq_('./lib/mutating-array');
-var cache         = _dereq_('./lib/cache-v2').create();
+var cache         = _dereq_('./lib/cache').create();
 var utils         = _dereq_('./lib/utils');
 
 /**
@@ -992,7 +992,7 @@ module.exports = Ember.Object.extend({
   }
 });
 
-},{"./lib/cache-v2":3,"./lib/mutating-array":4,"./lib/utils":5}],2:[function(_dereq_,module,exports){
+},{"./lib/cache":3,"./lib/mutating-array":4,"./lib/utils":5}],2:[function(_dereq_,module,exports){
 function NullStorage() {
   var noop = function(){};
 
