@@ -21,7 +21,6 @@ gulp.task('watch', function() {
   watch({ glob: [
     'lib/**/*.js',
     'index.js',
-    'index-v2.js',
     'test/**/*.js'
   ] }, function() {
     var test = spawn('npm', ['test']);

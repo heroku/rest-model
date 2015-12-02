@@ -35,11 +35,6 @@ before(function(done) {
     global.$            = jQuery;
     global.Handlebars   = benv.require('../bower_components/handlebars/handlebars.min.js');
     global.Ember        = benv.require('../bower_components/ember/ember.debug.js', 'Ember');
-    global.localStorage = _localStorage;
-
-    // Cache model with localStorage by loading it here.
-    require('./models');
-    localStorage.clear();
 
     done();
   });
