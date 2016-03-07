@@ -8,7 +8,7 @@ var utils         = require('./lib/utils');
  * Provides a suite of functionality around interacting with a resource on the
  * web using AJAX requests.
  *
- * @class RestModel.V2
+ * @class RestModel
  * @extends Ember.Object
  * @constructor
  * @param {Object} attributes the attributes to initialize the instance with
@@ -781,7 +781,7 @@ module.exports = Ember.Object.extend({
    * @param {Object} options options to pass on to the AJAX request
    * @param {Object} [processingOptions] options that control how the
    *   deserialized response is processed
-   * @param {RestModel.V2} updateModel a model to be updated after a later API
+   * @param {RestModel} updateModel a model to be updated after a later API
    *   request instead of the original model returned
    * @param {Function} [processingOptions.toResult=RestModel.toResult] a
    *   function used to convert the response body into an instance or array of
@@ -827,7 +827,7 @@ module.exports = Ember.Object.extend({
    * @param {Object} options options to pass on to the AJAX request
    * @param {Object} [processingOptions] options that control how the
    *   deserialized response is processed
-   * @param {RestModel.V2} updateModel a model to be updated after a later API
+   * @param {RestModel} updateModel a model to be updated after a later API
    *   request instead of the original model returned
    * @return {Ember.RSVP.Promise} a promise resolved with an object or array of
    *   objects from the cache or AJAX request
