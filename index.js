@@ -762,9 +762,9 @@ module.exports = Ember.Object.extend({
         return result;
       }.bind(this));
 
-      return MutatingArray.apply(content)
-        .set('filters', Ember.copy(this.filters))
-        .runFilters();
+      var results = MutatingArray.apply(content);
+      results.set('filters', Ember.copy(this.filters));
+      return results.runFilters();
     } else {
       var result = this.create(response);
       result.setProperties(parents);
