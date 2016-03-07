@@ -757,14 +757,18 @@ module.exports = Ember.Object.extend({
 
     if (Ember.isArray(response)) {
       var content = response.map(function(item) {
-        return this.create(item).setProperties(parents);
+        var result = this.create(item);
+        result.setProperties(parents);
+        return result;
       }.bind(this));
 
       return MutatingArray.apply(content)
         .set('filters', Ember.copy(this.filters))
         .runFilters();
     } else {
-      return this.create(response).setProperties(parents);
+      var result = this.create(response);
+      result.setProperties(parents);
+      return result;
     }
   },
 
