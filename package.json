@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/heroku/rest-model.git"
   },
+  "engines": {
+    "node": "4.3.x"
+  },
   "keywords": [
     "rest",
     "model",
