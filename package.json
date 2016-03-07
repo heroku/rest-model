@@ -2,8 +2,18 @@
   "name": "rest-model",
   "description": "[![Build Status](https://travis-ci.org/heroku/rest-model.svg?branch=master)](https://travis-ci.org/jclem/rest-model)",
   "version": "3.0.0",
-  "repository": { "type": "git", "url": "git+https://github.com/heroku/rest-model.git" },
-  "keywords": ["rest", "model", "rest-model", "ember", "ajax", "persistence"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/heroku/rest-model.git"
+  },
+  "keywords": [
+    "rest",
+    "model",
+    "rest-model",
+    "ember",
+    "ajax",
+    "persistence"
+  ],
   "author": "HIT <hit@heroku.com>",
   "contributors": [
     "Jonathan Clem <jonathan@jclem.net>",
@@ -14,7 +24,9 @@
     "Nando Vieira <fnando.vieira@gmail.com>"
   ],
   "license": "MIT",
-  "bugs": { "url": "https://github.com/heroku/rest-model/issues" },
+  "bugs": {
+    "url": "https://github.com/heroku/rest-model/issues"
+  },
   "homepage": "https://github.com/heroku/rest-model#readme",
   "scripts": {
     "build": "gulp",
@@ -23,6 +35,7 @@
   "devDependencies": {
     "benv": "^1.1.0",
     "bower": "^1.3.2",
+    "babelify": "6.4.0",
     "gulp": "^3.7.0",
     "gulp-browserify": "^0.5.0",
     "gulp-rename": "^1.2.0",

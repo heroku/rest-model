@@ -241,7 +241,7 @@ module.exports = Ember.Object.extend({
    *   state removes an item from the request pool
    */
   request: function(type, doRequest) {
-    type = 'is%@'.fmt(type.capitalize());
+    type = `is${type.capitalize()}`;
 
     this.set(type, true);
     this.incrementProperty('requestPool');
@@ -261,7 +261,7 @@ module.exports = Ember.Object.extend({
     var attrs = this.get('attrs');
 
     this.get('attrNames').forEach(function(key, i) {
-      var value = Ember.copy(this.get('originalProperties.%@'.fmt(key)));
+      var value = Ember.copy(this.get(`originalProperties.${key}`));
 
       if (/\.\[\]$/.test(attrs[i])) {
         this.get(key).setObjects(value);
@@ -580,8 +580,7 @@ module.exports = Ember.Object.extend({
       if (typeof parent !== 'string' && typeof parent !== 'number') {
         parentKey = parent.get('primaryKey');
       }
-
-      path = path.replace('/:%@'.fmt(key), '/%@'.fmt(parentKey));
+      path = path.replace(`/:${key}`, `/${parentKey}`);
     });
 
     return path;
@@ -603,7 +602,7 @@ module.exports = Ember.Object.extend({
       var primaryKey = parent ? this.getPrimaryKey(parent) : null;
 
       if (Ember.isNone(primaryKey)) {
-        throw new Error('No primary key found for parent "%@".'.fmt(key));
+        throw new Error(`No primary key found for parent "${key}".`);
       }
     }.bind(this));
   },
