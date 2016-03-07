@@ -2,14 +2,14 @@
 'use strict';
 
 var MutatingArray = _dereq_('./lib/mutating-array');
-var cache         = _dereq_('./lib/cache').create();
-var utils         = _dereq_('./lib/utils');
+var cache = _dereq_('./lib/cache').create();
+var utils = _dereq_('./lib/utils');
 
 /**
  * Provides a suite of functionality around interacting with a resource on the
  * web using AJAX requests.
  *
- * @class RestModel.V2
+ * @class RestModel
  * @extends Ember.Object
  * @constructor
  * @param {Object} attributes the attributes to initialize the instance with
@@ -24,7 +24,7 @@ module.exports = Ember.Object.extend({
    * @method init
    * @private
    */
-  init: function() {
+  init: function init() {
     this.setOriginalProperties();
     /**
      * The value of this instance's primary key. Found by iterating over the
@@ -56,9 +56,9 @@ module.exports = Ember.Object.extend({
    * @property attrs
    * @type {Array}
    */
-  attrs: function() {
+  attrs: (function () {
     return [];
-  }.property(),
+  }).property(),
 
   /**
    * Whether or not the instance is "in flight", meaning that it has AJAX
@@ -112,15 +112,15 @@ module.exports = Ember.Object.extend({
    * @private
    * @type {Array}
    */
-  attrNames: function() {
-    return this.get('attrs').map(function(attr) {
+  attrNames: (function () {
+    return this.get('attrs').map(function (attr) {
       if (/\.\[\]$/.test(attr)) {
         return attr.split('.')[0];
       } else {
         return attr;
       }
     });
-  }.property('attrs'),
+  }).property('attrs'),
 
   /**
    * The parents of this instance.
@@ -132,14 +132,14 @@ module.exports = Ember.Object.extend({
    * @private
    * @type {Object}
    */
-  parents: function() {
+  parents: (function () {
     var parentKeyNames = this.constructor.getParentKeyNames();
 
-    return parentKeyNames.reduce(function(parents, key) {
+    return parentKeyNames.reduce((function (parents, key) {
       parents[key] = this.get(key);
       return parents;
-    }.bind(this), {});
-  }.property().volatile(),
+    }).bind(this), {});
+  }).property().volatile(),
 
   /**
    * A path pointing to this instance, typically the class's base path joined
@@ -149,13 +149,12 @@ module.exports = Ember.Object.extend({
    * @property path
    * @type {String}
    */
-  path: function() {
+  path: (function () {
     var primaryKey = this.get('isPersisted') ? this.get('primaryKey') : null;
-    var parents    = this.get('parents');
+    var parents = this.get('parents');
 
     return this.constructor.buildPath(parents, primaryKey);
-  }.property('isPersisted', 'primaryKey', 'parents'),
-
+  }).property('isPersisted', 'primaryKey', 'parents'),
 
   /**
    * Delete this instance.
@@ -170,17 +169,17 @@ module.exports = Ember.Object.extend({
    * post.delete();
    * ```
    */
-  delete: function(options) {
-    return this.request('deleting', function() {
+  'delete': function _delete(options) {
+    return this.request('deleting', (function () {
       options = utils.extend({
-        url : this.get('path'),
+        url: this.get('path'),
         type: 'DELETE'
       }, options);
 
-      return this.constructor.ajax(options).then(function() {
+      return this.constructor.ajax(options).then((function () {
         return cache.removeRecord(this);
-      }.bind(this));
-    }.bind(this));
+      }).bind(this));
+    }).bind(this));
   },
 
   /**
@@ -196,21 +195,21 @@ module.exports = Ember.Object.extend({
    * post.fetch();
    * ```
    */
-  fetch: function(options) {
-    return this.request('fetching', function() {
+  fetch: function fetch(options) {
+    return this.request('fetching', (function () {
       options = utils.extend({
-        url : this.get('path'),
+        url: this.get('path'),
         type: 'GET'
       }, options);
 
-      return this.constructor.request(options, {}, this).then(function(data) {
+      return this.constructor.request(options, {}, this).then((function (data) {
         var properties = this.constructor.getUpdatableProperties(data);
         this.setProperties(properties);
         //we assume that these must in fact be the original properties
         this.setOriginalProperties();
         return this;
-      }.bind(this));
-    }.bind(this));
+      }).bind(this));
+    }).bind(this));
   },
 
   /**
@@ -222,7 +221,7 @@ module.exports = Ember.Object.extend({
    * @param {Object} data the data to be written to the cache
    * @return {Ember.RSVP.Promise} a promise resolved with the written data
    */
-  persistToCache: function(data) {
+  persistToCache: function persistToCache(data) {
     return cache.updateRecord(this, data);
   },
 
@@ -241,16 +240,16 @@ module.exports = Ember.Object.extend({
    * @param {Function} doRequest a function returning a promise whose finished
    *   state removes an item from the request pool
    */
-  request: function(type, doRequest) {
-    type = 'is%@'.fmt(type.capitalize());
+  request: function request(type, doRequest) {
+    type = 'is' + type.capitalize();
 
     this.set(type, true);
     this.incrementProperty('requestPool');
 
-    return doRequest().finally(function() {
+    return doRequest()['finally']((function () {
       this.set(type, false);
       this.decrementProperty('requestPool');
-    }.bind(this));
+    }).bind(this));
   },
 
   /**
@@ -258,18 +257,18 @@ module.exports = Ember.Object.extend({
    *
    * @method revert
    */
-  revert: function() {
+  revert: function revert() {
     var attrs = this.get('attrs');
 
-    this.get('attrNames').forEach(function(key, i) {
-      var value = Ember.copy(this.get('originalProperties.%@'.fmt(key)));
+    this.get('attrNames').forEach((function (key, i) {
+      var value = Ember.copy(this.get('originalProperties.' + key));
 
       if (/\.\[\]$/.test(attrs[i])) {
         this.get(key).setObjects(value);
       } else {
         this.set(key, value);
       }
-    }.bind(this));
+    }).bind(this));
   },
 
   /**
@@ -286,24 +285,24 @@ module.exports = Ember.Object.extend({
    * post.save();
    * ```
    */
-  save: function(options) {
+  save: function save(options) {
     var type = this.get('isNew') ? 'POST' : 'PATCH';
 
-    return this.request('saving', function() {
+    return this.request('saving', (function () {
       options = utils.extend({
-        url : this.get('path'),
+        url: this.get('path'),
         type: type,
         data: this.serialize()
       }, options);
 
-      return this.constructor.ajax(options).then(function(response) {
+      return this.constructor.ajax(options).then((function (response) {
         return this.persistToCache(response.data);
-      }.bind(this)).then(function(data) {
+      }).bind(this)).then((function (data) {
         this.setProperties(data);
         this.setOriginalProperties();
         return this;
-      }.bind(this));
-    }.bind(this));
+      }).bind(this));
+    }).bind(this));
   },
 
   /**
@@ -312,14 +311,14 @@ module.exports = Ember.Object.extend({
    * @method setOriginalProperties
    * @private
    */
-  setOriginalProperties: function() {
+  setOriginalProperties: function setOriginalProperties() {
     var attrNames = this.get('attrNames');
 
-    this.set('originalProperties', attrNames.reduce(function(properties, key) {
+    this.set('originalProperties', attrNames.reduce((function (properties, key) {
       var value = this.get(key);
       properties.set(key, Ember.copy(value, true));
       return properties;
-    }.bind(this), Ember.Object.create()));
+    }).bind(this), Ember.Object.create()));
   },
 
   /**
@@ -329,12 +328,12 @@ module.exports = Ember.Object.extend({
    * @method getDirtyProperties
    * @private
    */
-  getDirtyProperties: function() {
-    var attrNames          = this.get('attrNames');
+  getDirtyProperties: function getDirtyProperties() {
+    var attrNames = this.get('attrNames');
     var originalProperties = this.get('originalProperties');
 
-    return attrNames.reduce(function(changedProperties, key) {
-      var value         = this.get(key);
+    return attrNames.reduce((function (changedProperties, key) {
+      var value = this.get(key);
       var originalValue = originalProperties.get(key);
 
       if (Ember.isArray(value)) {
@@ -342,7 +341,7 @@ module.exports = Ember.Object.extend({
           changedProperties.push(key);
         }
       } else if (Ember.$.isPlainObject(value)) {
-        if(!utils.objectsEqual(value, originalValue)) {
+        if (!utils.objectsEqual(value, originalValue)) {
           changedProperties.push(key);
         }
       } else if (!Ember.isEqual(value, originalValue)) {
@@ -350,7 +349,7 @@ module.exports = Ember.Object.extend({
       }
 
       return changedProperties;
-    }.bind(this), []);
+    }).bind(this), []);
   },
 
   /**
@@ -360,7 +359,7 @@ module.exports = Ember.Object.extend({
    * @method serialize
    * @private
    */
-  serialize: function() {
+  serialize: function serialize() {
     return JSON.stringify(this.toObject());
   },
 
@@ -371,12 +370,12 @@ module.exports = Ember.Object.extend({
    * @method toObject
    * @return {Object} the plain object representation of this instance
    */
-  toObject: function() {
-    return this.get('attrNames').reduce(function(properties, key) {
+  toObject: function toObject() {
+    return this.get('attrNames').reduce((function (properties, key) {
       var value = this.get(key);
       properties[key] = value;
       return properties;
-    }.bind(this), {});
+    }).bind(this), {});
   },
 
   /**
@@ -387,13 +386,13 @@ module.exports = Ember.Object.extend({
    * @static
    * @private
    */
-  _definePrimaryKey: function() {
+  _definePrimaryKey: function _definePrimaryKey() {
     var keyNames = this.constructor.primaryKeys;
     var args = this.constructor.primaryKeys.concat({
-      get: function() {
+      get: function get() {
         var key, value;
         for (var i = 0; i < keyNames.length; i++) {
-          key   = keyNames[i];
+          key = keyNames[i];
           value = this.get(key);
 
           if (!Ember.isNone(value)) {
@@ -401,7 +400,7 @@ module.exports = Ember.Object.extend({
           }
         }
       },
-      set: function(key, _, setValue) {
+      set: function set(key, _, setValue) {
         if (this.get('primaryKey') !== setValue) {
           this.set(keyNames[0], setValue);
         }
@@ -417,9 +416,8 @@ module.exports = Ember.Object.extend({
    * @method _defineDirtyProperties
    * @private
    */
-  _defineDirtyProperties: function() {
-    var args = this.get('attrs')
-                   .concat('originalProperties', this.getDirtyProperties);
+  _defineDirtyProperties: function _defineDirtyProperties() {
+    var args = this.get('attrs').concat('originalProperties', this.getDirtyProperties);
     var dirtyProperties = Ember.computed.apply(Ember, args);
     Ember.defineProperty(this, 'dirtyProperties', dirtyProperties);
   }
@@ -506,17 +504,17 @@ module.exports = Ember.Object.extend({
    *   the request has completed
    * ```
    */
-  ajax: function(options) {
+  ajax: function ajax(options) {
     var ajaxOptions = {
-      type       : 'GET',
-      dataType   : 'json',
+      type: 'GET',
+      dataType: 'json',
       contentType: 'application/json'
     };
 
     utils.extend(ajaxOptions, options);
 
-    return new Ember.RSVP.Promise(function(resolve, reject) {
-      Ember.$.ajax(ajaxOptions).then(function(data, _text, jqXHR) {
+    return new Ember.RSVP.Promise((function (resolve, reject) {
+      Ember.$.ajax(ajaxOptions).then((function (data, _text, jqXHR) {
         jqXHR = jqXHR || {};
         if (Ember.isArray(data)) {
           data = this.deserializeArray(data);
@@ -525,11 +523,11 @@ module.exports = Ember.Object.extend({
         }
 
         resolve({ data: data, status: jqXHR.status });
-      }.bind(this), function(jqXHR) {
+      }).bind(this), function (jqXHR) {
         delete jqXHR.then;
         reject(jqXHR);
       });
-    }.bind(this));
+    }).bind(this));
   },
 
   /**
@@ -551,15 +549,15 @@ module.exports = Ember.Object.extend({
    * Comment.all({ post: 1 });
    * ```
    */
-  all: function(parents, options) {
+  all: function all(parents, options) {
     options = utils.extend({
-      url : this.buildPath(parents),
+      url: this.buildPath(parents),
       type: 'GET'
     }, options);
 
     var processingOptions = { parents: parents };
 
-    return this.request(options, processingOptions).then(function(results) {
+    return this.request(options, processingOptions).then(function (results) {
       return results;
     });
   },
@@ -574,15 +572,14 @@ module.exports = Ember.Object.extend({
    * @param {String} path the path to add the parents to
    * @return {String} the path with parent primary keys interpolated
    */
-  addParentsToPath: function(parents, path) {
-    Ember.$.each(parents, function(key, parent) {
+  addParentsToPath: function addParentsToPath(parents, path) {
+    Ember.$.each(parents, function (key, parent) {
       var parentKey = parent;
 
       if (typeof parent !== 'string' && typeof parent !== 'number') {
         parentKey = parent.get('primaryKey');
       }
-
-      path = path.replace('/:%@'.fmt(key), '/%@'.fmt(parentKey));
+      path = path.replace('/:' + key, '/' + parentKey);
     });
 
     return path;
@@ -598,15 +595,15 @@ module.exports = Ember.Object.extend({
    * @param {Object} parents the parents to validate are sufficient for this
    *   class
    */
-  assertHasParentKeys: function(parents) {
-    this.getParentKeyNames().forEach(function(key) {
-      var parent     = parents[key];
+  assertHasParentKeys: function assertHasParentKeys(parents) {
+    this.getParentKeyNames().forEach((function (key) {
+      var parent = parents[key];
       var primaryKey = parent ? this.getPrimaryKey(parent) : null;
 
       if (Ember.isNone(primaryKey)) {
-        throw new Error('No primary key found for parent "%@".'.fmt(key));
+        throw new Error('No primary key found for parent "' + key + '".');
       }
-    }.bind(this));
+    }).bind(this));
   },
 
   /**
@@ -620,12 +617,12 @@ module.exports = Ember.Object.extend({
    * @param {Number,String} [primaryKey] a primary to be appended to the path
    * @return {String} the path including any given primary key
    */
-  buildPath: function(parents, primaryKey) {
+  buildPath: function buildPath(parents, primaryKey) {
     var path = '/' + this.base;
 
     if (!Ember.$.isPlainObject(parents)) {
       primaryKey = parents;
-      parents    = {};
+      parents = {};
     }
 
     this.assertHasParentKeys(parents);
@@ -652,7 +649,7 @@ module.exports = Ember.Object.extend({
    * @param {Object} data the data to be deserialized
    * @return {Object} (optionally) transformed data object
    */
-  deserialize: function(data) {
+  deserialize: function deserialize(data) {
     return data;
   },
 
@@ -666,7 +663,7 @@ module.exports = Ember.Object.extend({
    * @param {Array} data an array of objects to be deserialized
    * @return {Array} an array of (optionally) transformed objects
    */
-  deserializeArray: function(data) {
+  deserializeArray: function deserializeArray(data) {
     return data.map(this.deserialize.bind(this));
   },
 
@@ -684,23 +681,22 @@ module.exports = Ember.Object.extend({
    * Post.find(1);
    * ```
    */
-  find: function(parents, primaryKey, options) {
+  find: function find(parents, primaryKey, options) {
     if (!Ember.$.isPlainObject(parents)) {
-      options    = primaryKey;
+      options = primaryKey;
       primaryKey = parents;
-      parents    = {};
+      parents = {};
     }
 
     options = utils.extend({
-      url : this.buildPath(parents, primaryKey),
+      url: this.buildPath(parents, primaryKey),
       type: 'GET'
     }, options);
 
-    return this.request(options)
-      .then(this.create.bind(this)).then(function(model) {
-        model.setProperties(parents);
-        return model;
-      });
+    return this.request(options).then(this.create.bind(this)).then(function (model) {
+      model.setProperties(parents);
+      return model;
+    });
   },
 
   /**
@@ -711,10 +707,10 @@ module.exports = Ember.Object.extend({
    * @private
    * @return {Array} the names of the parent keys based on the class's base
    */
-  getParentKeyNames: function() {
+  getParentKeyNames: function getParentKeyNames() {
     var matches = this.base.match(/\/:[^\/]+/g) || [];
 
-    return matches.map(function(segment) {
+    return matches.map(function (segment) {
       return segment.replace('/:', '');
     });
   },
@@ -730,7 +726,7 @@ module.exports = Ember.Object.extend({
    *   from
    * @return {String,Number} a primary key
    */
-  getPrimaryKey: function(object) {
+  getPrimaryKey: function getPrimaryKey(object) {
     if (typeof object === 'number' || typeof object === 'string') {
       return object;
     } else {
@@ -753,19 +749,23 @@ module.exports = Ember.Object.extend({
    *   object or array of objects
    * @return {Array,RestModel} an instance or array of instances of this class
    */
-  toResult: function(response, parents) {
+  toResult: function toResult(response, parents) {
     parents = parents || {};
 
     if (Ember.isArray(response)) {
-      var content = response.map(function(item) {
-        return this.create(item).setProperties(parents);
-      }.bind(this));
+      var content = response.map((function (item) {
+        var result = this.create(item);
+        result.setProperties(parents);
+        return result;
+      }).bind(this));
 
-      return MutatingArray.apply(content)
-        .set('filters', Ember.copy(this.filters))
-        .runFilters();
+      var results = MutatingArray.apply(content);
+      results.set('filters', Ember.copy(this.filters));
+      return results.runFilters();
     } else {
-      return this.create(response).setProperties(parents);
+      var result = this.create(response);
+      result.setProperties(parents);
+      return result;
     }
   },
 
@@ -779,7 +779,7 @@ module.exports = Ember.Object.extend({
    * @param {Object} options options to pass on to the AJAX request
    * @param {Object} [processingOptions] options that control how the
    *   deserialized response is processed
-   * @param {RestModel.V2} updateModel a model to be updated after a later API
+   * @param {RestModel} updateModel a model to be updated after a later API
    *   request instead of the original model returned
    * @param {Function} [processingOptions.toResult=RestModel.toResult] a
    *   function used to convert the response body into an instance or array of
@@ -795,17 +795,17 @@ module.exports = Ember.Object.extend({
    * });
    * ```
    */
-  request: function(options, processingOptions, updateModel) {
+  request: function request(options, processingOptions, updateModel) {
     var readFromCache = (this.cache || options.cache) && options.type.toLowerCase() === 'get';
 
     processingOptions = utils.extend({
-      toResult   : this.toResult.bind(this)
+      toResult: this.toResult.bind(this)
     }, processingOptions);
 
     if (readFromCache) {
       return this.requestWithCache(options, processingOptions, updateModel);
     } else {
-      return this.ajax(options).then(function(response) {
+      return this.ajax(options).then(function (response) {
         var parents = processingOptions.parents;
         return processingOptions.toResult(response.data, parents);
       });
@@ -825,15 +825,15 @@ module.exports = Ember.Object.extend({
    * @param {Object} options options to pass on to the AJAX request
    * @param {Object} [processingOptions] options that control how the
    *   deserialized response is processed
-   * @param {RestModel.V2} updateModel a model to be updated after a later API
+   * @param {RestModel} updateModel a model to be updated after a later API
    *   request instead of the original model returned
    * @return {Ember.RSVP.Promise} a promise resolved with an object or array of
    *   objects from the cache or AJAX request
    */
-  requestWithCache: function(options, processingOptions, updateModel) {
+  requestWithCache: function requestWithCache(options, processingOptions, updateModel) {
     var cachedValue;
 
-    return cache.getResponse(this, options.url).then(function(_cachedValue) {
+    return cache.getResponse(this, options.url).then((function (_cachedValue) {
       var result;
 
       cachedValue = _cachedValue;
@@ -843,12 +843,11 @@ module.exports = Ember.Object.extend({
         this.ajaxAndUpdateCache(options, processingOptions, updateModel || result);
         return result;
       } else {
-        return this.ajaxAndUpdateCache(options, processingOptions)
-          .then(function(response) {
-            return processingOptions.toResult(response);
-          });
+        return this.ajaxAndUpdateCache(options, processingOptions).then(function (response) {
+          return processingOptions.toResult(response);
+        });
       }
-    }.bind(this)).then(function(response) {
+    }).bind(this)).then(function (response) {
       return response;
     });
   },
@@ -867,16 +866,16 @@ module.exports = Ember.Object.extend({
    * @return {Ember.RSVP.Promise} a promise resolved with the newly updated
    *   cached value
    */
-  ajaxAndUpdateCache: function(options, processingOptions, result) {
+  ajaxAndUpdateCache: function ajaxAndUpdateCache(options, processingOptions, result) {
     var parents = processingOptions.parents;
 
-    return this.ajax(options).then(function(response) {
+    return this.ajax(options).then((function (response) {
       if (response.status === 304) {
         return response.data;
       } else {
         return cache.setResponse(this, options.url, response.data);
       }
-    }.bind(this)).then(function(data) {
+    }).bind(this)).then((function (data) {
       var response = processingOptions.toResult(data, parents);
       if (result && result !== data) {
         if (Ember.isArray(response)) {
@@ -887,7 +886,7 @@ module.exports = Ember.Object.extend({
       } else {
         return response;
       }
-    }.bind(this));
+    }).bind(this));
   },
 
   /**
@@ -903,21 +902,23 @@ module.exports = Ember.Object.extend({
    * @return {Ember.RSVP.Promise} a promise resolved with the newly updated
    *   cached array
    */
-  updateCachedArray: function(result, newArray) {
-    var newRecords     = utils.findNotIn(newArray, result, this);
+  updateCachedArray: function updateCachedArray(result, newArray) {
+    var newRecords = utils.findNotIn(newArray, result, this);
     var removedRecords = utils.findNotIn(result, newArray, this);
     var updatedRecords = utils.findIn(result, newArray, this);
 
     result.pushObjects(newRecords);
     result.removeObjects(removedRecords);
 
-    updatedRecords.forEach(function(record) {
-      if (record.get('isDirty')) { return; }
+    updatedRecords.forEach((function (record) {
+      if (record.get('isDirty')) {
+        return;
+      }
       var newProperties = utils.findMatching(record, this, newArray);
       newProperties = this.getUpdatableProperties(newProperties);
       record.setProperties(newProperties);
       record.setOriginalProperties();
-    }.bind(this));
+    }).bind(this));
 
     return result;
   },
@@ -935,8 +936,10 @@ module.exports = Ember.Object.extend({
    * @return {Ember.RSVP.Promise} a promise resolved with the newly updated
    *   cached object
    */
-  updateCachedObject: function(result, newProperties) {
-    if (result.get('isDirty')) { return; }
+  updateCachedObject: function updateCachedObject(result, newProperties) {
+    if (result.get('isDirty')) {
+      return;
+    }
     newProperties = this.getUpdatableProperties(newProperties);
     result.setProperties(newProperties);
     result.setOriginalProperties();
@@ -954,8 +957,8 @@ module.exports = Ember.Object.extend({
    * @param {RestModel} model the model to pull properties from
    * @return {Array} an array of property names
    */
-  getUpdatableProperties: function(model) {
-    var keys = Object.keys(model).filter(function(key) {
+  getUpdatableProperties: function getUpdatableProperties(model) {
+    var keys = Object.keys(model).filter(function (key) {
       return ['primaryKey', 'originalProperties', 'dirtyProperties'].indexOf(key) === -1;
     });
 
@@ -971,7 +974,7 @@ module.exports = Ember.Object.extend({
    * @method create
    */
 
-  create: function (attrs) {
+  create: function create(attrs) {
     attrs = attrs || {};
 
     if (attrs.isRestModelClass) {
@@ -993,8 +996,10 @@ module.exports = Ember.Object.extend({
 });
 
 },{"./lib/cache":3,"./lib/mutating-array":4,"./lib/utils":5}],2:[function(_dereq_,module,exports){
+'use strict';
+
 function NullStorage() {
-  var noop = function(){};
+  var noop = function noop() {};
 
   this.getItem = noop;
   this.setItem = noop;
@@ -1006,7 +1011,7 @@ function NullStorage() {
 
 module.exports.NullStorage = NullStorage;
 
-module.exports.get = function() {
+module.exports.get = function () {
   try {
     localStorage.setItem('_rest-model', true);
     localStorage.removeItem('_rest-model', true);
@@ -1037,14 +1042,14 @@ module.exports = Ember.Object.extend({
    * @return {Ember.RSVP.Promise} a promise resolved with the cached value of
    *   the response from the given path if found, otherwise `null`
    */
-  getResponse: function(klass, path) {
-    return this.getItem(path).then(function(value) {
+  getResponse: function getResponse(klass, path) {
+    return this.getItem(path).then((function (value) {
       if (Ember.isArray(value)) {
         return this.getArrayResponse(klass, value);
       } else {
         return this.getItemResponse(klass, value);
       }
-    }.bind(this));
+    }).bind(this));
   },
 
   /**
@@ -1062,11 +1067,11 @@ module.exports = Ember.Object.extend({
    * @param {Array} keys an array of keys to fetch the properties for
    * @return {Ember.RSVP.Promise} a promise resolved with an array of objects
    */
-  getArrayResponse: function(klass, keys) {
-    return Ember.RSVP.all(keys.map(function(key) {
+  getArrayResponse: function getArrayResponse(klass, keys) {
+    return Ember.RSVP.all(keys.map((function (key) {
       var cacheKey = this.getCacheKey(klass.typeKey, key);
       return this.getItem(cacheKey);
-    }.bind(this))).then(function(response) {
+    }).bind(this))).then(function (response) {
       return response.compact();
     });
   },
@@ -1081,7 +1086,7 @@ module.exports = Ember.Object.extend({
    * @param {String,Number} key a key to fetch the properties for
    * @return {Ember.RSVP.Promise} a promise resolved with an object
    */
-  getItemResponse: function(klass, key) {
+  getItemResponse: function getItemResponse(klass, key) {
     var cacheKey = this.getCacheKey(klass.typeKey, key);
     return this.getItem(cacheKey);
   },
@@ -1097,7 +1102,7 @@ module.exports = Ember.Object.extend({
    * @return {Ember.RSVP.Promise} a promise resolved with the set value once it
    *   has been written to the cache
    */
-  setResponse: function(klass, path, response) {
+  setResponse: function setResponse(klass, path, response) {
     if (Ember.isArray(response)) {
       return this.setArrayResponse(klass, path, response);
     } else {
@@ -1117,18 +1122,14 @@ module.exports = Ember.Object.extend({
    * @return {Ember.RSVP.Promise} a promise resolved with the set value once it
    *   has been written to the cache
    */
-  setArrayResponse: function(klass, path, response) {
+  setArrayResponse: function setArrayResponse(klass, path, response) {
     var primaryKey = klass.primaryKeys[0];
-    var keys       = response.mapBy(primaryKey);
+    var keys = response.mapBy(primaryKey);
 
-    return Ember.RSVP.all([
-      this.setItem(path, keys),
-
-      response.map(function(item) {
-        var cacheKey = this.getCacheKey(klass.typeKey, item[primaryKey]);
-        return this.putItem(cacheKey, item);
-      }.bind(this))
-    ]).then(function() {
+    return Ember.RSVP.all([this.setItem(path, keys), response.map((function (item) {
+      var cacheKey = this.getCacheKey(klass.typeKey, item[primaryKey]);
+      return this.putItem(cacheKey, item);
+    }).bind(this))]).then(function () {
       return response;
     });
   },
@@ -1145,15 +1146,12 @@ module.exports = Ember.Object.extend({
    * @return {Ember.RSVP.Promise} a promise resolved with the set value once it
    *   has been written to the cache
    */
-  setItemResponse: function(klass, path, response) {
+  setItemResponse: function setItemResponse(klass, path, response) {
     var primaryKey = klass.primaryKeys[0];
-    var key        = response[primaryKey];
-    var cacheKey   = this.getCacheKey(klass.typeKey, key);
+    var key = response[primaryKey];
+    var cacheKey = this.getCacheKey(klass.typeKey, key);
 
-    return Ember.RSVP.all([
-      this.putItem(cacheKey, response),
-      this.setItem(path, key)
-    ]).then(function() {
+    return Ember.RSVP.all([this.putItem(cacheKey, response), this.setItem(path, key)]).then(function () {
       return response;
     });
   },
@@ -1166,8 +1164,8 @@ module.exports = Ember.Object.extend({
    * @param {RestModel} record the record to be removed from the cache
    * @return {Ember.RSVP.Promise} a promise resolved when the record is removed
    */
-  removeRecord: function(record) {
-    var typeKey    = record.constructor.typeKey;
+  removeRecord: function removeRecord(record) {
+    var typeKey = record.constructor.typeKey;
     var key, primaryKey;
 
     if (record.constructor.primaryKeys.length) {
@@ -1188,7 +1186,7 @@ module.exports = Ember.Object.extend({
    * @param {Object} data the data to be written to the cache
    * @return {Ember.RSVP.Promise} a promise resolved with the data written
    */
-  updateRecord: function(record, data) {
+  updateRecord: function updateRecord(record, data) {
     var primaryKeyName = record.constructor.primaryKeys[0];
     var cacheKey, primaryKey;
 
@@ -1211,8 +1209,8 @@ module.exports = Ember.Object.extend({
    * @param {String,Number} key the primary key to build the cache key for
    * @return {String} a cache key
    */
-  getCacheKey: function(klass, key) {
-    return '%@: %@'.fmt(klass, key);
+  getCacheKey: function getCacheKey(klass, key) {
+    return klass + ': ' + key;
   },
 
   /**
@@ -1224,18 +1222,18 @@ module.exports = Ember.Object.extend({
    * @param {String} key the key to fetch the value from the cache for
    * @return {Ember.RSVP.Promise} a promise resolved with the cached value
    */
-  getItem: function(key) {
-    return new Ember.RSVP.Promise(function(resolve) {
+  getItem: function getItem(key) {
+    return new Ember.RSVP.Promise((function (resolve) {
       var value = this.storage.getItem(key) || null;
 
       try {
         value = JSON.parse(value);
-      } catch(e) {
+      } catch (e) {
         value = value;
       }
 
       resolve(value);
-    }.bind(this));
+    }).bind(this));
   },
 
   /**
@@ -1249,8 +1247,8 @@ module.exports = Ember.Object.extend({
    * @return {Ember.RSVP.Promise} a promise resolved when the value has been set
    *   in the cache
    */
-  putItem: function(key, value) {
-    return this.getItem(key).then(function(existingValue) {
+  putItem: function putItem(key, value) {
+    return this.getItem(key).then((function (existingValue) {
       if (existingValue) {
         for (var prop in value) {
           if (value.hasOwnProperty(prop)) {
@@ -1262,7 +1260,7 @@ module.exports = Ember.Object.extend({
       } else {
         return this.setItem(key, value);
       }
-    }.bind(this));
+    }).bind(this));
   },
 
   /**
@@ -1276,8 +1274,8 @@ module.exports = Ember.Object.extend({
    * @return {Ember.RSVP.Promise} a promise resolved when the value has been set
    *   in the cache
    */
-  setItem: function(key, value) {
-    return new Ember.RSVP.Promise(function(resolve) {
+  setItem: function setItem(key, value) {
+    return new Ember.RSVP.Promise((function (resolve) {
       var stringValue;
 
       if (typeof value === 'string') {
@@ -1288,7 +1286,7 @@ module.exports = Ember.Object.extend({
 
       this.storage.setItem(key, stringValue);
       resolve(value);
-    }.bind(this));
+    }).bind(this));
   },
 
   /**
@@ -1301,11 +1299,11 @@ module.exports = Ember.Object.extend({
    * @return {Ember.RSVP.Promise} a promise resolved when the key has been
    *   removed
    */
-  removeItem: function(key) {
-    return new Ember.RSVP.Promise(function(resolve) {
+  removeItem: function removeItem(key) {
+    return new Ember.RSVP.Promise((function (resolve) {
       this.storage.removeItem(key);
       resolve();
-    }.bind(this));
+    }).bind(this));
   }
 });
 
@@ -1313,11 +1311,11 @@ module.exports = Ember.Object.extend({
 'use strict';
 
 module.exports = Ember.Mixin.create({
-  filters: function() {
+  filters: (function () {
     return [];
-  }.property(),
+  }).property(),
 
-  replace: function(idx, amt, objects) {
+  replace: function replace(idx, amt, objects) {
     var filters = this.get('filters');
 
     filters.forEach(function applyFilter(filter) {
@@ -1327,22 +1325,22 @@ module.exports = Ember.Mixin.create({
     return this._super(idx, amt, objects);
   },
 
-  runFilters: function() {
+  runFilters: (function () {
     return this.replace(0, this.length, this);
-  }.observes('filters.[]')
+  }).observes('filters.[]')
 });
 
 },{}],5:[function(_dereq_,module,exports){
 'use strict';
 
-exports.arraysEqual = function(array1, array2) {
+exports.arraysEqual = function (array1, array2) {
   if (array1.length !== array2.length) {
     return false;
   }
 
   var value1, value2;
 
-  for (var i=0; i < array1.length; i++) {
+  for (var i = 0; i < array1.length; i++) {
     value1 = array1[i];
     value2 = array2[i];
 
@@ -1354,16 +1352,18 @@ exports.arraysEqual = function(array1, array2) {
   return true;
 };
 
-exports.objectsEqual = function(object1, object2) {
-  if (!(object1 && object2)) { return false; }
+exports.objectsEqual = function (object1, object2) {
+  if (!(object1 && object2)) {
+    return false;
+  }
 
   var object1Keys = Object.keys(object1);
   var object2Keys = Object.keys(object2);
 
   var haveSameKeys = this.arraysEqual(object1Keys, object2Keys);
 
-  if(haveSameKeys) {
-    var haveSameValues = object1Keys.every(function(key) {
+  if (haveSameKeys) {
+    var haveSameValues = object1Keys.every(function (key) {
       return object1[key] === object2[key];
     });
     return haveSameValues;
@@ -1372,7 +1372,7 @@ exports.objectsEqual = function(object1, object2) {
   }
 };
 
-exports.extend = function(target, source) {
+exports.extend = function (target, source) {
   for (var key in source) {
     if (source.hasOwnProperty(key)) {
       target[key] = source[key];
@@ -1382,16 +1382,16 @@ exports.extend = function(target, source) {
   return target;
 };
 
-exports.findMatching = function(toMatch, klass, data) {
+exports.findMatching = function (toMatch, klass, data) {
   var primaryStorageKey = klass.primaryKeys[0];
 
-  return data.find(function(datum) {
+  return data.find(function (datum) {
     return toMatch[primaryStorageKey] === datum[primaryStorageKey];
   });
 };
 
-exports.findIn = function(arrayA, arrayB, klass) {
-  return arrayA.reduce(function(inItems, item) {
+exports.findIn = function (arrayA, arrayB, klass) {
+  return arrayA.reduce((function (inItems, item) {
     var itemExists = this.findMatching(item, klass, arrayB);
 
     if (itemExists) {
@@ -1399,11 +1399,11 @@ exports.findIn = function(arrayA, arrayB, klass) {
     }
 
     return inItems;
-  }.bind(this), []);
+  }).bind(this), []);
 };
 
-exports.findNotIn = function(arrayA, arrayB, klass) {
-  return arrayA.reduce(function(notIn, item) {
+exports.findNotIn = function (arrayA, arrayB, klass) {
+  return arrayA.reduce((function (notIn, item) {
     var itemExists = this.findMatching(item, klass, arrayB);
 
     if (!itemExists) {
@@ -1411,7 +1411,7 @@ exports.findNotIn = function(arrayA, arrayB, klass) {
     }
 
     return notIn;
-  }.bind(this), []);
+  }).bind(this), []);
 };
 
 },{}]},{},[1])
