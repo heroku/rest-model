@@ -1,7 +1,7 @@
 {
   "name": "rest-model",
   "main": "dist/rest-model.js",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "authors": [
     "Jonathan Clem <jonathan@jclem.net>",
     "Josh Lewis <josh.w.lewis@gmail.com>",
