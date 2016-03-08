@@ -9,7 +9,7 @@ var watch      = require('gulp-watch');
 
 gulp.task('default', function() {
   gulp.src('index.js')
-    .pipe(browserify({ standalone: 'RestModel' }))
+    .pipe(browserify({ standalone: 'RestModel', transform: ['babelify'] }))
     .pipe(rename('rest-model.js'))
     .pipe(gulp.dest('dist'))
     .pipe(uglifyjs())

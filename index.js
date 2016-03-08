@@ -8,7 +8,7 @@ var utils         = require('./lib/utils');
  * Provides a suite of functionality around interacting with a resource on the
  * web using AJAX requests.
  *
- * @class RestModel.V2
+ * @class RestModel
  * @extends Ember.Object
  * @constructor
  * @param {Object} attributes the attributes to initialize the instance with
@@ -241,7 +241,7 @@ module.exports = Ember.Object.extend({
    *   state removes an item from the request pool
    */
   request: function(type, doRequest) {
-    type = 'is%@'.fmt(type.capitalize());
+    type = `is${type.capitalize()}`;
 
     this.set(type, true);
     this.incrementProperty('requestPool');
@@ -261,7 +261,7 @@ module.exports = Ember.Object.extend({
     var attrs = this.get('attrs');
 
     this.get('attrNames').forEach(function(key, i) {
-      var value = Ember.copy(this.get('originalProperties.%@'.fmt(key)));
+      var value = Ember.copy(this.get(`originalProperties.${key}`));
 
       if (/\.\[\]$/.test(attrs[i])) {
         this.get(key).setObjects(value);
@@ -580,8 +580,7 @@ module.exports = Ember.Object.extend({
       if (typeof parent !== 'string' && typeof parent !== 'number') {
         parentKey = parent.get('primaryKey');
       }
-
-      path = path.replace('/:%@'.fmt(key), '/%@'.fmt(parentKey));
+      path = path.replace(`/:${key}`, `/${parentKey}`);
     });
 
     return path;
@@ -603,7 +602,7 @@ module.exports = Ember.Object.extend({
       var primaryKey = parent ? this.getPrimaryKey(parent) : null;
 
       if (Ember.isNone(primaryKey)) {
-        throw new Error('No primary key found for parent "%@".'.fmt(key));
+        throw new Error(`No primary key found for parent "${key}".`);
       }
     }.bind(this));
   },
@@ -757,14 +756,18 @@ module.exports = Ember.Object.extend({
 
     if (Ember.isArray(response)) {
       var content = response.map(function(item) {
-        return this.create(item).setProperties(parents);
+        var result = this.create(item);
+        result.setProperties(parents);
+        return result;
       }.bind(this));
 
-      return MutatingArray.apply(content)
-        .set('filters', Ember.copy(this.filters))
-        .runFilters();
+      var results = MutatingArray.apply(content);
+      results.set('filters', Ember.copy(this.filters));
+      return results.runFilters();
     } else {
-      return this.create(response).setProperties(parents);
+      var result = this.create(response);
+      result.setProperties(parents);
+      return result;
     }
   },
 
@@ -778,7 +781,7 @@ module.exports = Ember.Object.extend({
    * @param {Object} options options to pass on to the AJAX request
    * @param {Object} [processingOptions] options that control how the
    *   deserialized response is processed
-   * @param {RestModel.V2} updateModel a model to be updated after a later API
+   * @param {RestModel} updateModel a model to be updated after a later API
    *   request instead of the original model returned
    * @param {Function} [processingOptions.toResult=RestModel.toResult] a
    *   function used to convert the response body into an instance or array of
@@ -824,7 +827,7 @@ module.exports = Ember.Object.extend({
    * @param {Object} options options to pass on to the AJAX request
    * @param {Object} [processingOptions] options that control how the
    *   deserialized response is processed
-   * @param {RestModel.V2} updateModel a model to be updated after a later API
+   * @param {RestModel} updateModel a model to be updated after a later API
    *   request instead of the original model returned
    * @return {Ember.RSVP.Promise} a promise resolved with an object or array of
    *   objects from the cache or AJAX request

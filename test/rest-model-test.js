@@ -11,7 +11,7 @@ require('./test-helper');
 var should = require('should');
 var sinon  = require('sinon');
 
-describe('RestModel.V2', function() {
+describe('RestModel', function() {
   var Comment, Post, RestModel, cache, post;
 
   before(function() {
