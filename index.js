@@ -1,6 +1,5 @@
 'use strict';
 
-var MutatingArray = require('./lib/mutating-array');
 var cache         = require('./lib/cache').create();
 var utils         = require('./lib/utils');
 
@@ -761,15 +760,27 @@ module.exports = Ember.Object.extend({
         return result;
       }.bind(this));
 
-      var results = MutatingArray.apply(content);
-      results.set('filters', Ember.copy(this.filters));
-      return results.runFilters();
+      return this.runFilters(content);
     } else {
       var result = this.create(response);
       result.setProperties(parents);
       return result;
     }
   },
+
+  replace: function(idx, amt, objects) {
+    var filters = this.filters;
+
+    filters.forEach(function applyFilter(filter) {
+      objects = objects.filter(filter);
+    });
+
+    return objects;
+  },
+
+  runFilters: function(items) {
+    return this.replace(0, items.length, items);
+  }.observes('filters.[]'),
 
   /**
    * Request a given resource. Will use caching if the request is a "GET"
@@ -988,7 +999,8 @@ module.exports = Ember.Object.extend({
           prop[key] = val;
         }
       });
-      return this.extend(cp)._super.call(this, prop);
+      this.extend(cp);
+      return this._super.call(this, prop);
     }
     return this._super.call(this, attrs);
   }

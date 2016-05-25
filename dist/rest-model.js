@@ -1,7 +1,6 @@
 !function(e){if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.RestModel=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 'use strict';
 
-var MutatingArray = _dereq_('./lib/mutating-array');
 var cache = _dereq_('./lib/cache').create();
 var utils = _dereq_('./lib/utils');
 
@@ -759,15 +758,27 @@ module.exports = Ember.Object.extend({
         return result;
       }).bind(this));
 
-      var results = MutatingArray.apply(content);
-      results.set('filters', Ember.copy(this.filters));
-      return results.runFilters();
+      return this.runFilters(content);
     } else {
       var result = this.create(response);
       result.setProperties(parents);
       return result;
     }
   },
+
+  replace: function replace(idx, amt, objects) {
+    var filters = this.filters;
+
+    filters.forEach(function applyFilter(filter) {
+      objects = objects.filter(filter);
+    });
+
+    return objects;
+  },
+
+  runFilters: (function (items) {
+    return this.replace(0, items.length, items);
+  }).observes('filters.[]'),
 
   /**
    * Request a given resource. Will use caching if the request is a "GET"
@@ -989,13 +1000,14 @@ module.exports = Ember.Object.extend({
           prop[key] = val;
         }
       });
-      return this.extend(cp)._super.call(this, prop);
+      this.extend(cp);
+      return this._super.call(this, prop);
     }
     return this._super.call(this, attrs);
   }
 });
 
-},{"./lib/cache":3,"./lib/mutating-array":4,"./lib/utils":5}],2:[function(_dereq_,module,exports){
+},{"./lib/cache":3,"./lib/utils":4}],2:[function(_dereq_,module,exports){
 'use strict';
 
 function NullStorage() {
@@ -1308,29 +1320,6 @@ module.exports = Ember.Object.extend({
 });
 
 },{"./cache-storage":2}],4:[function(_dereq_,module,exports){
-'use strict';
-
-module.exports = Ember.Mixin.create({
-  filters: (function () {
-    return [];
-  }).property(),
-
-  replace: function replace(idx, amt, objects) {
-    var filters = this.get('filters');
-
-    filters.forEach(function applyFilter(filter) {
-      objects = objects.filter(filter);
-    });
-
-    return this._super(idx, amt, objects);
-  },
-
-  runFilters: (function () {
-    return this.replace(0, this.length, this);
-  }).observes('filters.[]')
-});
-
-},{}],5:[function(_dereq_,module,exports){
 'use strict';
 
 exports.arraysEqual = function (array1, array2) {
