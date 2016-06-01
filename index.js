@@ -819,6 +819,12 @@ module.exports = Ember.Object.extend({
       return this.requestWithCache(options, processingOptions, updateModel);
     } else {
       return this.ajax(options).then(function(response) {
+        // If you pass the option to return the payload from fetch(),
+        // this will set the raw response of that request to a property on the
+        // instance at fetchRawPayload.
+        if (options.returnPayload) {
+          updateModel.set(`raw`, response.data);
+        }
         var parents = processingOptions.parents;
         return processingOptions.toResult(response.data, parents);
       });
