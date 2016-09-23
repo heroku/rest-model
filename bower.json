@@ -19,13 +19,13 @@
     "ajax"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/jclem/rest-model.git",
+  "homepage": "https://github.com/heroku/rest-model.git",
   "ignore": [
     "**/.*",
     "test"
   ],
   "dependencies": {
-    "ember": ">= 1.5.0 <= 2.6.0"
+    "ember": ">= 2.7.3 <= 3.0.0"
   },
   "devDependencies": {
     "handlebars": "~2.0.0"
