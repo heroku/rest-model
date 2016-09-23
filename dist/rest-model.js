@@ -1,7 +1,6 @@
 !function(e){if("object"==typeof exports)module.exports=e();else if("function"==typeof define&&define.amd)define(e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.RestModel=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
 'use strict';
 
-var cache = _dereq_('./lib/cache').create();
 var utils = _dereq_('./lib/utils');
 
 /**
@@ -175,9 +174,7 @@ module.exports = Ember.Object.extend({
         type: 'DELETE'
       }, options);
 
-      return this.constructor.ajax(options).then((function () {
-        return cache.removeRecord(this);
-      }).bind(this));
+      return this.constructor.ajax(options);
     }).bind(this));
   },
 
@@ -209,19 +206,6 @@ module.exports = Ember.Object.extend({
         return this;
       }).bind(this));
     }).bind(this));
-  },
-
-  /**
-   * Persist the given data for this item to the cache.
-   *
-   * @method persistToCache
-   * @async
-   * @private
-   * @param {Object} data the data to be written to the cache
-   * @return {Ember.RSVP.Promise} a promise resolved with the written data
-   */
-  persistToCache: function persistToCache(data) {
-    return cache.updateRecord(this, data);
   },
 
   /**
@@ -295,7 +279,7 @@ module.exports = Ember.Object.extend({
       }, options);
 
       return this.constructor.ajax(options).then((function (response) {
-        return this.persistToCache(response.data);
+        return response.data;
       }).bind(this)).then((function (data) {
         this.setProperties(data);
         this.setOriginalProperties();
@@ -464,16 +448,6 @@ module.exports = Ember.Object.extend({
    * @default ''
    */
   base: '',
-
-  /**
-   * Whether or not to cache GET calls when using the `::request` method.
-   *
-   * @property cache
-   * @static
-   * @type Boolean
-   * @default false
-   */
-  cache: false,
 
   /**
    * An array of filters that will be called on each array returned by this
@@ -737,7 +711,7 @@ module.exports = Ember.Object.extend({
    * Transform results from an API request into an instance or array of
    * instances of this class.
    *
-   * Accepts an object of parent properties to ensure that cached and new
+   * Accepts an object of parent properties to ensure that new
    * records always have a reference to their parent records.
    *
    * @method toResult
@@ -796,7 +770,7 @@ module.exports = Ember.Object.extend({
    *   function used to convert the response body into an instance or array of
    *   instances of RestModel
    * @return {Ember.RSVP.Promise} a promise resolved with an instance or array
-   *   of instances from the cache or AJAX request
+   *   of instances from the AJAX request
    * @example
    * ```javascript
    * Post.request({
@@ -807,160 +781,20 @@ module.exports = Ember.Object.extend({
    * ```
    */
   request: function request(options, processingOptions, updateModel) {
-    var readFromCache = (this.cache || options.cache) && options.type.toLowerCase() === 'get';
-
     processingOptions = utils.extend({
       toResult: this.toResult.bind(this)
     }, processingOptions);
 
-    if (readFromCache) {
-      return this.requestWithCache(options, processingOptions, updateModel);
-    } else {
-      return this.ajax(options).then(function (response) {
-        // If you pass the option to return the payload from fetch(),
-        // this will set the raw response of that request to a property on the
-        // instance at fetchRawPayload.
-        if (options.returnPayload) {
-          updateModel.set('raw', response.data);
-        }
-        var parents = processingOptions.parents;
-        return processingOptions.toResult(response.data, parents);
-      });
-    }
-  },
-
-  /**
-   * Request a given resource. If the resource is in the cache, resolve with the
-   * cached version. The cached object returned will be updated when a
-   * subsequent AJAX call completes, either by setting properties or by pushing
-   * and deleting objects in the case of an array.
-   *
-   * @method requestWithCache
-   * @async
-   * @static
-   * @private
-   * @param {Object} options options to pass on to the AJAX request
-   * @param {Object} [processingOptions] options that control how the
-   *   deserialized response is processed
-   * @param {RestModel} updateModel a model to be updated after a later API
-   *   request instead of the original model returned
-   * @return {Ember.RSVP.Promise} a promise resolved with an object or array of
-   *   objects from the cache or AJAX request
-   */
-  requestWithCache: function requestWithCache(options, processingOptions, updateModel) {
-    var cachedValue;
-
-    return cache.getResponse(this, options.url).then((function (_cachedValue) {
-      var result;
-
-      cachedValue = _cachedValue;
-
-      if (cachedValue) {
-        result = processingOptions.toResult(cachedValue, processingOptions.parents);
-        this.ajaxAndUpdateCache(options, processingOptions, updateModel || result);
-        return result;
-      } else {
-        return this.ajaxAndUpdateCache(options, processingOptions).then(function (response) {
-          return processingOptions.toResult(response);
-        });
+    return this.ajax(options).then(function (response) {
+      // If you pass the option to return the payload from fetch(),
+      // this will set the raw response of that request to a property on the
+      // instance at fetchRawPayload.
+      if (options.returnPayload) {
+        updateModel.set('raw', response.data);
       }
-    }).bind(this)).then(function (response) {
-      return response;
+      var parents = processingOptions.parents;
+      return processingOptions.toResult(response.data, parents);
     });
-  },
-
-  /**
-   * Perform an AJAX request, update its value in the cache, and if given a
-   * `cachedValue`, update it in a KVO-friendly way.
-   *
-   * @method ajaxAndUpdateCache
-   * @async
-   * @static
-   * @private
-   * @param {Object} options options to pass on to the AJAX request
-   * @param {Array,Object} result a cached result that will be updated with new
-   *   objects or properties from the AJAX request
-   * @return {Ember.RSVP.Promise} a promise resolved with the newly updated
-   *   cached value
-   */
-  ajaxAndUpdateCache: function ajaxAndUpdateCache(options, processingOptions, result) {
-    var parents = processingOptions.parents;
-
-    return this.ajax(options).then((function (response) {
-      if (response.status === 304) {
-        return response.data;
-      } else {
-        return cache.setResponse(this, options.url, response.data);
-      }
-    }).bind(this)).then((function (data) {
-      var response = processingOptions.toResult(data, parents);
-      if (result && result !== data) {
-        if (Ember.isArray(response)) {
-          return this.updateCachedArray(result, response);
-        } else {
-          return this.updateCachedObject(result, response);
-        }
-      } else {
-        return response;
-      }
-    }).bind(this));
-  },
-
-  /**
-   * Update a cached array of objects. Add new objects, remove deleted objects,
-   * and update existing objects.
-   *
-   * @method updateCachedArray
-   * @async
-   * @static
-   * @private
-   * @param {Array} result the array of RestModel instances to be updated
-   * @param {Array} newArray the new values to update the cached array with
-   * @return {Ember.RSVP.Promise} a promise resolved with the newly updated
-   *   cached array
-   */
-  updateCachedArray: function updateCachedArray(result, newArray) {
-    var newRecords = utils.findNotIn(newArray, result, this);
-    var removedRecords = utils.findNotIn(result, newArray, this);
-    var updatedRecords = utils.findIn(result, newArray, this);
-
-    result.pushObjects(newRecords);
-    result.removeObjects(removedRecords);
-
-    updatedRecords.forEach((function (record) {
-      if (record.get('isDirty')) {
-        return;
-      }
-      var newProperties = utils.findMatching(record, this, newArray);
-      newProperties = this.getUpdatableProperties(newProperties);
-      record.setProperties(newProperties);
-      record.setOriginalProperties();
-    }).bind(this));
-
-    return result;
-  },
-
-  /**
-   * Update a cached object by setting its new properties.
-   *
-   * @method updateCachedObject
-   * @async
-   * @static
-   * @private
-   * @param {Array} cachedObject the object to be updated
-   * @param {Array} newProperties the new properties to update the cached object
-   *   with
-   * @return {Ember.RSVP.Promise} a promise resolved with the newly updated
-   *   cached object
-   */
-  updateCachedObject: function updateCachedObject(result, newProperties) {
-    if (result.get('isDirty')) {
-      return;
-    }
-    newProperties = this.getUpdatableProperties(newProperties);
-    result.setProperties(newProperties);
-    result.setOriginalProperties();
-    return result;
   },
 
   /**
@@ -1013,319 +847,7 @@ module.exports = Ember.Object.extend({
   }
 });
 
-},{"./lib/cache":3,"./lib/utils":4}],2:[function(_dereq_,module,exports){
-'use strict';
-
-function NullStorage() {
-  var noop = function noop() {};
-
-  this.getItem = noop;
-  this.setItem = noop;
-  this.removeItem = noop;
-  this.clear = noop;
-  this.key = noop;
-  this.length = 0;
-};
-
-module.exports.NullStorage = NullStorage;
-
-module.exports.get = function () {
-  try {
-    localStorage.setItem('_rest-model', true);
-    localStorage.removeItem('_rest-model', true);
-    return localStorage;
-  } catch (error) {
-    return new NullStorage();
-  }
-};
-
-},{}],3:[function(_dereq_,module,exports){
-'use strict';
-
-var cacheStorage = _dereq_('./cache-storage');
-
-/**
- * A set of functions responsible for managing RestModel's localStorage cache.
- *
- * @class Cache
- */
-module.exports = Ember.Object.extend({
-  /**
-   * Find the cached value of a response.
-   *
-   * @method getResponse
-   * @async
-   * @param {String} klass the class associated with the response
-   * @param {String} path the path to get the cached response for
-   * @return {Ember.RSVP.Promise} a promise resolved with the cached value of
-   *   the response from the given path if found, otherwise `null`
-   */
-  getResponse: function getResponse(klass, path) {
-    return this.getItem(path).then((function (value) {
-      if (Ember.isArray(value)) {
-        return this.getArrayResponse(klass, value);
-      } else {
-        return this.getItemResponse(klass, value);
-      }
-    }).bind(this));
-  },
-
-  /**
-   * A cache storage interface. It defaults to localStorage.
-   */
-  storage: cacheStorage.get(),
-
-  /**
-   * Fetch the cached attributes of the given array of keys.
-   *
-   * @method getArrayResponse
-   * @async
-   * @private
-   * @param {String} klass the class associated with the objects being found
-   * @param {Array} keys an array of keys to fetch the properties for
-   * @return {Ember.RSVP.Promise} a promise resolved with an array of objects
-   */
-  getArrayResponse: function getArrayResponse(klass, keys) {
-    return Ember.RSVP.all(keys.map((function (key) {
-      var cacheKey = this.getCacheKey(klass.typeKey, key);
-      return this.getItem(cacheKey);
-    }).bind(this))).then(function (response) {
-      return response.compact();
-    });
-  },
-
-  /**
-   * Fetch the cached attributes of the given key.
-   *
-   * @method getItemResponse
-   * @async
-   * @private
-   * @param {String} klass the class associated with the objects being found
-   * @param {String,Number} key a key to fetch the properties for
-   * @return {Ember.RSVP.Promise} a promise resolved with an object
-   */
-  getItemResponse: function getItemResponse(klass, key) {
-    var cacheKey = this.getCacheKey(klass.typeKey, key);
-    return this.getItem(cacheKey);
-  },
-
-  /**
-   * Set the cached value of a response.
-   *
-   * @method setResponse
-   * @async
-   * @param {String} klass the class associated with the response
-   * @param {String} path the path to set the cached response for
-   * @param {Array,Object} response the response to write to the cache
-   * @return {Ember.RSVP.Promise} a promise resolved with the set value once it
-   *   has been written to the cache
-   */
-  setResponse: function setResponse(klass, path, response) {
-    if (Ember.isArray(response)) {
-      return this.setArrayResponse(klass, path, response);
-    } else {
-      return this.setItemResponse(klass, path, response);
-    }
-  },
-
-  /**
-   * Set the cached value of an array response.
-   *
-   * @method setArrayResponse
-   * @async
-   * @private
-   * @param {String} klass the class associated with the response
-   * @param {String} path the path to set the cached response for
-   * @param {Array} response the response to write to the cache
-   * @return {Ember.RSVP.Promise} a promise resolved with the set value once it
-   *   has been written to the cache
-   */
-  setArrayResponse: function setArrayResponse(klass, path, response) {
-    var primaryKey = klass.primaryKeys[0];
-    var keys = response.mapBy(primaryKey);
-
-    return Ember.RSVP.all([this.setItem(path, keys), response.map((function (item) {
-      var cacheKey = this.getCacheKey(klass.typeKey, item[primaryKey]);
-      return this.putItem(cacheKey, item);
-    }).bind(this))]).then(function () {
-      return response;
-    });
-  },
-
-  /**
-   * Set the cached value of a single item response.
-   *
-   * @method setItemResponse
-   * @async
-   * @private
-   * @param {String} klass the class associated with the response
-   * @param {String} path the path to set the cached response for
-   * @param {Array} response the response to write to the cache
-   * @return {Ember.RSVP.Promise} a promise resolved with the set value once it
-   *   has been written to the cache
-   */
-  setItemResponse: function setItemResponse(klass, path, response) {
-    var primaryKey = klass.primaryKeys[0];
-    var key = response[primaryKey];
-    var cacheKey = this.getCacheKey(klass.typeKey, key);
-
-    return Ember.RSVP.all([this.putItem(cacheKey, response), this.setItem(path, key)]).then(function () {
-      return response;
-    });
-  },
-
-  /**
-   * Remove the given record from the cache.
-   *
-   * @method removeRecord
-   * @async
-   * @param {RestModel} record the record to be removed from the cache
-   * @return {Ember.RSVP.Promise} a promise resolved when the record is removed
-   */
-  removeRecord: function removeRecord(record) {
-    var typeKey = record.constructor.typeKey;
-    var key, primaryKey;
-
-    if (record.constructor.primaryKeys.length) {
-      primaryKey = record.get(record.constructor.primaryKeys[0]);
-    }
-
-    key = this.getCacheKey(typeKey, primaryKey);
-
-    return this.removeItem(key);
-  },
-
-  /**
-   * Replace the the given record's cached data with the given data.
-   *
-   * @method updateRecord
-   * @async
-   * @param {RestModel} record the record to be updated in the cache
-   * @param {Object} data the data to be written to the cache
-   * @return {Ember.RSVP.Promise} a promise resolved with the data written
-   */
-  updateRecord: function updateRecord(record, data) {
-    var primaryKeyName = record.constructor.primaryKeys[0];
-    var cacheKey, primaryKey;
-
-    if (primaryKeyName) {
-      primaryKey = record.get(primaryKeyName) || data[primaryKeyName];
-    }
-
-    cacheKey = this.getCacheKey(record.constructor.typeKey, primaryKey);
-
-    return this.putItem(cacheKey, data);
-  },
-
-  /**
-   * Get a cache key for a given class and key.
-   *
-   * @method getCacheKey
-   * @private
-   * @param {String} className the lowercase, string name of the class to build
-   *   a cache key for
-   * @param {String,Number} key the primary key to build the cache key for
-   * @return {String} a cache key
-   */
-  getCacheKey: function getCacheKey(klass, key) {
-    return klass + ': ' + key;
-  },
-
-  /**
-   * Fetch a string value from the cache and return it, JSON-parsed.
-   *
-   * @method getItem
-   * @async
-   * @private
-   * @param {String} key the key to fetch the value from the cache for
-   * @return {Ember.RSVP.Promise} a promise resolved with the cached value
-   */
-  getItem: function getItem(key) {
-    return new Ember.RSVP.Promise((function (resolve) {
-      var value = this.storage.getItem(key) || null;
-
-      try {
-        value = JSON.parse(value);
-      } catch (e) {
-        value = value;
-      }
-
-      resolve(value);
-    }).bind(this));
-  },
-
-  /**
-   * Update or set a JSON value in the cache.
-   *
-   * @method putItem
-   * @async
-   * @private
-   * @param {String} key the key to set the value for in the cache
-   * @param {Object,Array.String,Array.Object} value the value to put in the cache
-   * @return {Ember.RSVP.Promise} a promise resolved when the value has been set
-   *   in the cache
-   */
-  putItem: function putItem(key, value) {
-    return this.getItem(key).then((function (existingValue) {
-      if (existingValue) {
-        for (var prop in value) {
-          if (value.hasOwnProperty(prop)) {
-            existingValue[prop] = value[prop];
-          }
-        }
-
-        return this.setItem(key, existingValue);
-      } else {
-        return this.setItem(key, value);
-      }
-    }).bind(this));
-  },
-
-  /**
-   * Set a JSON value in the cache.
-   *
-   * @method setItem
-   * @async
-   * @private
-   * @param {String} key the key to set the value for in the cache
-   * @param {Object,Array.String,Array.Object} value the value to put in the cache
-   * @return {Ember.RSVP.Promise} a promise resolved when the value has been set
-   *   in the cache
-   */
-  setItem: function setItem(key, value) {
-    return new Ember.RSVP.Promise((function (resolve) {
-      var stringValue;
-
-      if (typeof value === 'string') {
-        stringValue = value;
-      } else {
-        stringValue = JSON.stringify(value);
-      }
-
-      this.storage.setItem(key, stringValue);
-      resolve(value);
-    }).bind(this));
-  },
-
-  /**
-   * Remove an item from the cache.
-   *
-   * @method removeItem
-   * @async
-   * @private
-   * @param {String} key the key to be removed from the cache
-   * @return {Ember.RSVP.Promise} a promise resolved when the key has been
-   *   removed
-   */
-  removeItem: function removeItem(key) {
-    return new Ember.RSVP.Promise((function (resolve) {
-      this.storage.removeItem(key);
-      resolve();
-    }).bind(this));
-  }
-});
-
-},{"./cache-storage":2}],4:[function(_dereq_,module,exports){
+},{"./lib/utils":2}],2:[function(_dereq_,module,exports){
 'use strict';
 
 exports.arraysEqual = function (array1, array2) {

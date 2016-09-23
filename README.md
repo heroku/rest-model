@@ -223,43 +223,6 @@ var App = RestModel.extend().reopenClass({
 })
 ```
 
-### Caching
-
-Although caching is in an early state in RestModel, there is basic caching
-functionality, which uses `localStorage`. In order to activate it, set `cache`
-to `true` on the class:
-
-```javascript
-var App = RestModel.extend().reopenClass({
-  cache: true,
-  url: '/apps'
-});
-```
-
-The cache will keep a single representation of every record of that class it has
-fetched, and for every separate URL, either an array of record primary keys or
-a single record primary key for that URL.
-
-Once a request to an endpoint has been made once (and then cached), subsequent
-request promises will immediately resolve with the cached value. An API request
-will be triggered in the background, and the cached value (both in the cache and
-in the record or array of records the promise was resolved with) will be
-updated.
-
-On endpoints that return arrays, the cache will add, update, and remove* the
-appropriate records.
-
-On endpoints that return single objects, the cache will only update the cached
-object.
-
-As long as what's rendered by your Ember app is the same array or object
-returned by a RestModel method (e.g. `::all`, `#find`), your view should render
-immediately, and then update once the background API request completes.
-
-_*This can currently break for paginated APIs, as it is impossible to
-determine whether a record has been removed or simply relocated to a different
-page or range._
-
 ## Building
 
 Before a release, RestModel should be built with a non-uglified and an uglified
