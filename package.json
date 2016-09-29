@@ -1,7 +1,7 @@
 {
   "name": "rest-model",
   "description": "[![Build Status](https://travis-ci.org/heroku/rest-model.svg?branch=master)](https://travis-ci.org/jclem/rest-model)",
-  "version": "4.3.0",
+  "version": "5.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/heroku/rest-model.git"
