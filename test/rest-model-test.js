@@ -12,11 +12,10 @@ var should = require('should');
 var sinon  = require('sinon');
 
 describe('RestModel', function() {
-  var Comment, Post, RestModel, cache, post;
+  var Comment, Post, RestModel, post;
 
   before(function() {
     RestModel = require('../index');
-    cache     = require('../lib/cache').create();
 
     Post = RestModel.extend({
       attrs: function() {
@@ -33,14 +32,12 @@ describe('RestModel', function() {
     }).reopenClass({
       primaryKeys: ['id'],
       typeKey    : 'post',
-      base       : 'posts',
-      cache      : true
+      base       : 'posts'
     });
 
     Comment = RestModel.extend().reopenClass({
       typeKey: 'comment',
-      base   : 'posts/:post/comments',
-      cache  : true
+      base   : 'posts/:post/comments'
     });
   });
 
@@ -221,18 +218,6 @@ describe('RestModel', function() {
         args = jQuery.ajax.lastCall.args;
       });
 
-      it('removes the record from the cache', function() {
-        this.resolve = { id: 1, name: 'post' };
-
-        return Post.find(1).then(function() {
-          return post.delete();
-        }).then(function() {
-          return cache.getItem('post: 1');
-        }).then(function(cached) {
-          should(cached).be.null;
-        });
-      });
-
       it('temporarily sets the isDeleting and inFlight properties', function(done) {
         this.resolve = {};
 
@@ -274,27 +259,6 @@ describe('RestModel', function() {
         post.get('dirtyProperties.length').should.equal(0);
         done();
       });
-    });
-
-    it('is cached', function(done) {
-      this.resolve = { id: 1, email: 'first-email@example.com' };
-
-      post.set('id', 1);
-
-      return post.fetch().then(function() {
-        post = Post.create({ id: 1 });
-
-        this.resolve = { id: 1, email: 'new-email@example.com' };
-
-        post.fetch().then(function() {
-          post.get('email').should.eql('first-email@example.com');
-        });
-
-        setTimeout(function() {
-          post.get('email').should.eql('new-email@example.com');
-          done();
-        }, 20);
-      }.bind(this));
     });
 
     context('when there is a primary key', function() {
@@ -426,16 +390,6 @@ describe('RestModel', function() {
 
       return post.save().then(function() {
         post.get('name').should.eql('Test Post');
-      });
-    });
-
-    it('updates the cached representation of the record', function() {
-      this.resolve = { id: 1, name: 'Test Post' };
-
-      return post.save().then(function() {
-        return cache.getItem('post: 1').then(function(item) {
-          item.should.eql({ id: 1, name: 'Test Post' });
-        });
       });
     });
 
@@ -619,36 +573,6 @@ describe('RestModel', function() {
             comments[0].get('post').should.eql(5);
           });
         });
-
-        context('and the request is cached', function() {
-          var originalResponse;
-
-          beforeEach(function() {
-            originalResponse = [{ id: 1, name: 'name-1' }];
-            this.resolve = originalResponse;
-
-            return Comment.all({ post: 1 }).then(function() {
-              this.resolve =
-                [{ id: 1, name: 'name-1' }, { id: 2, name: 'name-2' }];
-            }.bind(this));
-          });
-
-          it('adds the parents to the previously cached records', function(done) {
-            Comment.all({ post: 1 }).then(function(comments) {
-              comments.mapBy('parents.post').should.eql([1]);
-              this.afterRequest = done;
-            }.bind(this));
-          });
-
-          it('adds the parents to any new records', function(done) {
-            return Comment.all({ post: 1 }).then(function(comments) {
-              setTimeout(function() {
-                comments.mapBy('parents.post').should.eql([1, 1]);
-                done();
-              }, 20);
-            });
-          });
-        });
       });
 
       context('when not given parents', function() {
@@ -691,17 +615,6 @@ describe('RestModel', function() {
       });
     });
 
-    it('writes the model to the cache', function() {
-      var attrs    = { id: 1, name: 'name' };
-      this.resolve = attrs;
-
-      return Post.find(1).then(function() {
-        return cache.getResponse(Post, '/posts/1').then(function(response) {
-          response.should.eql(attrs);
-        });
-      });
-    });
-
     context('when the model requires parents', function() {
       context('when given parents', function() {
         it('uses the parents to build the path', function() {
@@ -731,7 +644,7 @@ describe('RestModel', function() {
 
   describe('::request', function() {
     context('when it is not a GET request', function() {
-      var ajaxStub, cacheSpy;
+      var ajaxStub;
 
       beforeEach(function() {
         ajaxStub = sinon.stub(RestModel, 'ajax').returns({
@@ -739,7 +652,6 @@ describe('RestModel', function() {
             resolve({data: null, status: 200});
           }
         });
-        cacheSpy = sinon.spy(RestModel, 'requestWithCache');
 
         return RestModel.request({
           type: 'POST'
@@ -748,155 +660,10 @@ describe('RestModel', function() {
 
       afterEach(function() {
         ajaxStub.restore();
-        cacheSpy.restore();
-      });
-
-      it('does not perform caching', function() {
-        cacheSpy.callCount.should.eql(0);
       });
 
       it('performs an AJAX request with the options', function() {
         ajaxStub.lastCall.args[0].should.eql({ type: 'POST' });
-      });
-    });
-
-    context('when it is a GET request', function() {
-      context('and caching is not enabled', function() {
-        var cacheSpy;
-
-        beforeEach(function() {
-          this.resolve = [{ id: 1 }];
-          cacheSpy = sinon.spy(RestModel, 'requestWithCache');
-
-          return RestModel.request({
-            type: 'GET'
-          });
-        });
-
-        afterEach(function() {
-          cacheSpy.restore();
-        });
-
-        it('does not perform caching', function() {
-          cacheSpy.callCount.should.eql(0);
-        });
-      });
-
-      context('and the request is not cached', function() {
-        var cacheSpy;
-
-        beforeEach(function() {
-          cacheSpy = sinon.spy(cache.constructor.prototype, 'setResponse');
-        });
-
-        afterEach(function() {
-          cacheSpy.reset();
-        });
-
-        it('writes the response to the cache', function() {
-          this.resolve = { id: 1, name: 'name' };
-
-          return Post.request({
-            type: 'GET',
-            url : '/posts/1'
-          }).then(function() {
-            cacheSpy.lastCall.args.should.eql([
-              Post,
-              '/posts/1',
-              { id: 1, name: 'name' }
-            ]);
-          });
-        });
-      });
-
-      context('and the request is cached', function() {
-        var originalResponse;
-
-        context('and the response is an array', function() {
-          beforeEach(function() {
-            originalResponse = [{ id: 1, name: 'name-1' }, { id: 2, name: 'name-2' }];
-            this.resolve = originalResponse;
-
-            return Post.request({
-              type: 'GET',
-              url : '/posts'
-            }).then(function() {
-              this.resolve = [{ id: 1, name: 'new-name-1' }, { id: 3, name: 'name-3' }];
-            }.bind(this));
-          });
-
-          it('initially returns the cached array', function(done) {
-            return Post.request({
-              type: 'GET',
-              url : '/posts'
-            }).then(function(result) {
-              result.mapBy('name').should.eql(['name-1', 'name-2']);
-              setTimeout(done, 20);
-            });
-          });
-
-          it('updates the array after the request', function(done) {
-            return Post.request({
-              type: 'GET',
-              url : '/posts'
-            }).then(function(result) {
-              setTimeout(function() {
-                result.mapBy('name').should.eql(['new-name-1', 'name-3']);
-                done();
-              }, 20);
-            });
-          });
-
-          it('updates the array with instances, not objects', function(done) {
-            return Post.request({
-              type: 'GET',
-              url : '/posts'
-            }).then(function(result) {
-              setTimeout(function() {
-                result.mapBy('constructor.typeKey').should.eql(['post', 'post']);
-                done();
-              }, 20);
-            });
-          });
-        });
-
-        context('and the response is an object', function() {
-          var originalResponse;
-
-          beforeEach(function() {
-            originalResponse = { id: 1, name: 'name' };
-            this.resolve = originalResponse;
-
-            return Post.request({
-              type: 'GET',
-              url : '/posts/1'
-            }).then(function() {
-              this.resolve = { id: 1, name: 'new-name' };
-            }.bind(this));
-          });
-
-          it('initially returns the cached object', function(done) {
-            return Post.request({
-              type: 'GET',
-              url : '/posts/1'
-            }).then(function(result) {
-              result.get('name').should.eql(originalResponse.name);
-              setTimeout(done, 20);
-            });
-          });
-
-          it('updates the cached object', function(done) {
-            return Post.request({
-              type: 'GET',
-              url : '/posts/1'
-            }).then(function(result) {
-              setTimeout(function() {
-                result.get('name').should.eql('new-name');
-                done();
-              }, 20);
-            });
-          });
-        });
       });
     });
   });

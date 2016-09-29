@@ -27,7 +27,6 @@
     "global": false,
     "it": false,
     "jQuery": false,
-    "localStorage": false,
     "module": false,
     "require": false
   }
