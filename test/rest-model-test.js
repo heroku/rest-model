@@ -18,17 +18,17 @@ describe('RestModel', function() {
     RestModel = require('../index');
 
     Post = RestModel.extend({
-      attrs: function() {
-        return ['name', 'tags.[]'];
-      }.property(),
+      attrs: Ember.computed(function() {
+        return Ember.A(['name', 'tags.[]']);
+      }),
 
-      tags: function() {
-        return [];
-      }.property(),
+      tags: Ember.computed(function() {
+        return Ember.A([]);
+      }),
 
-      object: function() {
+      object: Ember.computed(function() {
         return {foo: 'bar'};
-      }.property()
+      })
     }).reopenClass({
       primaryKeys: ['id'],
       typeKey    : 'post',
@@ -56,12 +56,12 @@ describe('RestModel', function() {
       var instance;
       beforeEach(function() {
         instance = RestModel.extend({
-          attrs: function() {
+          attrs: Ember.computed(function() {
             return ['object'];
-          }.property(),
-          object: function() {
+          }),
+          object: Ember.computed(function() {
             return {foo: 'bar'};
-          }.property()
+          })
         }).create();
       });
 
@@ -327,16 +327,16 @@ describe('RestModel', function() {
     });
 
     it('reverts array properties', function() {
-      post.get('tags').toArray().should.eql([]);
+      post.get('tags').toArray().length.should.eql(0);
     });
 
     it('reverts array properties in a KVO-friendly way', function() {
       var changed;
 
       Post.reopen({
-        change: function() {
+        change: Ember.observer('tags.[]', function() {
           changed = true;
-        }.observes('tags.[]')
+        })
       });
 
       post = Post.create();
@@ -522,7 +522,7 @@ describe('RestModel', function() {
         this.resolve = [{ foo: 'bar' }];
 
         return Model.ajax().then(function(response) {
-          response.data.toArray().should.eql([{ foo: 'transformed' }]);
+          response.data.should.eql([{ foo: 'transformed' }]);
         });
       });
     });

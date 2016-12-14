@@ -12,6 +12,9 @@ before(function(done) {
     global.jQuery       = require('../bower_components/jquery/dist/jquery.min.js');
     global.$            = jQuery;
     global.Handlebars   = benv.require('../bower_components/handlebars/handlebars.min.js');
+    global.EmberENV = {
+      EXTEND_PROTOTYPES: false
+    };
     global.Ember        = benv.require('../bower_components/ember/ember.debug.js', 'Ember');
     // account for fact that Ember 2.7 and later don't think we have a DOM while we are testing
     // which means that Ember.$ never gets defined

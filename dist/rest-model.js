@@ -2,6 +2,9 @@
 'use strict';
 
 var utils = _dereq_('./lib/utils');
+var observer = Ember.observer;
+var computed = Ember.computed;
+var capitalize = Ember.String.capitalize;
 
 /**
  * Provides a suite of functionality around interacting with a resource on the
@@ -54,9 +57,9 @@ module.exports = Ember.Object.extend({
    * @property attrs
    * @type {Array}
    */
-  attrs: (function () {
+  attrs: computed(function () {
     return [];
-  }).property(),
+  }),
 
   /**
    * Whether or not the instance is "in flight", meaning that it has AJAX
@@ -110,7 +113,7 @@ module.exports = Ember.Object.extend({
    * @private
    * @type {Array}
    */
-  attrNames: (function () {
+  attrNames: computed('attrs', function () {
     return this.get('attrs').map(function (attr) {
       if (/\.\[\]$/.test(attr)) {
         return attr.split('.')[0];
@@ -118,7 +121,7 @@ module.exports = Ember.Object.extend({
         return attr;
       }
     });
-  }).property('attrs'),
+  }),
 
   /**
    * The parents of this instance.
@@ -130,14 +133,14 @@ module.exports = Ember.Object.extend({
    * @private
    * @type {Object}
    */
-  parents: (function () {
+  parents: computed(function () {
     var parentKeyNames = this.constructor.getParentKeyNames();
 
     return parentKeyNames.reduce((function (parents, key) {
       parents[key] = this.get(key);
       return parents;
     }).bind(this), {});
-  }).property().volatile(),
+  }).volatile(),
 
   /**
    * A path pointing to this instance, typically the class's base path joined
@@ -147,12 +150,12 @@ module.exports = Ember.Object.extend({
    * @property path
    * @type {String}
    */
-  path: (function () {
+  path: computed('isPersisted', 'primaryKey', 'parents', function () {
     var primaryKey = this.get('isPersisted') ? this.get('primaryKey') : null;
     var parents = this.get('parents');
 
     return this.constructor.buildPath(parents, primaryKey);
-  }).property('isPersisted', 'primaryKey', 'parents'),
+  }),
 
   /**
    * Delete this instance.
@@ -224,7 +227,7 @@ module.exports = Ember.Object.extend({
    *   state removes an item from the request pool
    */
   request: function request(type, doRequest) {
-    type = 'is' + type.capitalize();
+    type = 'is' + capitalize(type);
 
     this.set(type, true);
     this.incrementProperty('requestPool');
@@ -750,9 +753,9 @@ module.exports = Ember.Object.extend({
     return objects;
   },
 
-  runFilters: (function (items) {
+  runFilters: observer('filters.[]', function (items) {
     return this.replace(0, items.length, items);
-  }).observes('filters.[]'),
+  }),
 
   /**
    * Request a given resource. Will use caching if the request is a "GET"
